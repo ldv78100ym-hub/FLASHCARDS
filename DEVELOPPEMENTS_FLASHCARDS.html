@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur Infini : Développement Algébrique</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Styles 3D et Animations */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .card-inner { transition: transform 0.6s; }
+        .card-container.flipped .card-inner { transform: rotateY(180deg); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* UI Elements */
+        
+        /* --- MODIFICATION ICI : Score en bas à droite --- */
+        #score-panel {
+            position: fixed; 
+            top: auto;      /* On annule la position haute */
+            bottom: 30px;   /* On le place en bas */
+            right: 20px;    /* À droite */
+            background: rgba(30, 41, 59, 0.9); 
+            padding: 10px;
+            border-radius: 8px; 
+            border: 1px solid #475569; 
+            z-index: 40;
+            display: flex; 
+            flex-direction: column; 
+            gap: 5px;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Bouton Retour en bas à gauche */
+        #back-btn {
+            position: fixed; 
+            top: auto;      
+            bottom: 30px;   
+            left: 20px;
+            z-index: 40;
+            background: rgba(30, 41, 59, 0.9); 
+            color: #cbd5e1;
+            padding: 8px 16px; 
+            border-radius: 20px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            border: 1px solid #475569;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+        #back-btn:hover {
+            background: #334155;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .modal {
+            display: none; position: fixed; z-index: 100; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background-color: #1e293b; margin: 10% auto; padding: 25px;
+            border: 1px solid #475569; border-radius: 12px;
+            width: 90%; max-width: 600px; color: #e2e8f0;
+        }
+        .close-btn { float: right; font-size: 28px; cursor: pointer; }
+        
+        @media (max-width: 768px) {
+            /* Ajustement mobile pour les deux éléments */
+            #score-panel { bottom: 20px; right: 10px; padding: 8px; font-size: 0.8rem; }
+            #back-btn { bottom: 20px; left: 10px; padding: 6px 12px; font-size: 0.8rem;}
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <div id="score-panel">
+        <span class="text-xs text-slate-400 font-bold text-center border-b border-slate-600 mb-1 pb-1">SESSION</span>
+        <div class="flex gap-4 justify-center">
+            <span class="text-emerald-400 font-mono">✅ <span id="score-ok">0</span></span>
+            <span class="text-rose-400 font-mono">❌ <span id="score-ko">0</span></span>
+        </div>
+    </div>
+
+    <a href="https://ldv78100ym-hub.github.io/HOME/" id="back-btn">↩ Retour Menu</a>
+
+    <header class="p-4 md:p-6 border-b border-slate-700 bg-slate-800/50 backdrop-blur-sm sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <i data-lucide="infinity" class="text-indigo-400 w-8 h-8"></i>
+                <div class="flex flex-col">
+                    <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                        Générateur Algébrique
+                    </h1>
+                    <span class="text-xs text-slate-400">Entraînement Infini • 1<sup>re</sup> STI2D / STL</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 bg-slate-700 p-1 rounded-lg">
+                <span class="text-sm font-medium px-2 text-slate-300">Niveau :</span>
+                <select id="levelSelect" class="bg-slate-600 text-white text-sm rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 border-none cursor-pointer">
+                    <option value="1">1. Entiers Relatifs (Simple)</option>
+                    <option value="2">2. Fractions (Simple)</option>
+                    <option value="3">3. Entiers (Complexe)</option>
+                    <option value="4">4. Fractions (Complexe)</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center justify-center p-4 w-full max-w-4xl mx-auto z-0">
+        
+        <div class="w-full mb-6 flex justify-between items-end px-2">
+            <span class="text-slate-400 text-sm font-medium">Exercice n°<span id="currentIndex">1</span> <span class="text-xs opacity-50">(Généré aléatoirement)</span></span>
+        </div>
+
+        <div class="relative w-full max-w-2xl h-80 md:h-96 perspective-1000 group cursor-pointer card-container" id="cardContainer">
+            <div class="card-inner relative w-full h-full transform-style-3d shadow-2xl rounded-2xl">
+                
+                <div class="absolute w-full h-full backface-hidden bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+                    <div class="absolute top-4 left-4 flex items-center gap-2">
+                        <span class="bg-indigo-500/20 text-indigo-300 text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wide">Calculer</span>
+                        <span id="cardTypeBadge" class="bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded-md">Type</span>
+                    </div>
+                    
+                    <div class="flex-grow flex items-center justify-center w-full overflow-x-auto no-scrollbar">
+                        <div id="cardQuestion" class="text-3xl md:text-5xl font-serif text-white tracking-wide">
+                            Loading...
+                        </div>
+                    </div>
+                    
+                    <p class="text-slate-500 text-sm mt-4 animate-pulse">Cliquez pour voir la solution</p>
+                </div>
+
+                <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-gradient-to-br from-indigo-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+                    <div class="absolute top-4 left-4">
+                        <span class="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wide">Résultat</span>
+                    </div>
+
+                    <div class="flex-grow flex items-center justify-center w-full overflow-x-auto no-scrollbar">
+                        <div id="cardAnswer" class="text-2xl md:text-4xl font-serif text-emerald-100">
+                            </div>
+                    </div>
+
+                    <div class="w-full mt-4 pt-4 border-t border-white/10 text-left">
+                        <p class="text-xs text-indigo-200/60 uppercase tracking-widest mb-1">Détails</p>
+                        <p id="cardNote" class="text-sm text-indigo-200">
+                            </p>
+                    </div>
+
+                    <div class="flex gap-4 mt-4 w-full justify-center">
+                        <button id="btnFail" class="flex-1 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 border border-rose-500/50 py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="x" class="w-4 h-4"></i> À revoir
+                        </button>
+                        <button id="btnSuccess" class="flex-1 bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-200 border border-emerald-500/50 py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="check" class="w-4 h-4"></i> Correct
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-center gap-6 mt-8 w-full max-w-md">
+            <button id="prevBtn" class="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700 hover:border-indigo-500/50">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                <span class="hidden md:inline">Précédent</span>
+            </button>
+
+            <button id="flipBtn" class="flex items-center justify-center w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-105 active:scale-95">
+                <i data-lucide="rotate-cw" class="w-6 h-6"></i>
+            </button>
+
+            <button id="nextBtn" class="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700 hover:border-indigo-500/50">
+                <span class="hidden md:inline">Suivant</span>
+                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+    </main>
+
+    <div class="flex justify-center p-2 bg-slate-900">
+        <button id="copyright-btn" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">⚖️ Infos & Droits</button> 
+    </div>
+
+    <div id="copyrightModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>⚖️ Droits d'Auteur et Licence d'Utilisation</h2>
+            <p><b>Auteur : Yann Merdy (yann.merdy@gmail.com)</b> - Novembre 2025</p>
+            <hr>
+            <h3>Licence d'Utilisation Non Commerciale</h3>
+            <p>Ce code HTML/CSS/JavaScript ainsi que le contenu généré par l'application sont la propriété intellectuelle exclusive de l'auteur, Yann Merdy.</p>
+            
+            <h4>Conditions :</h4>
+            <ul>
+                <li><b>Utilisation Privée et Éducative (Autorisée) :</b> Vous êtes autorisé.e à utiliser, copier, modifier et distribuer ce code et son contenu <b>uniquement</b> à des fins <b>personnelles, éducatives et non lucratives</b>.</li>
+                <li><b>Utilisation Commerciale (Interdite) :</b> Toute utilisation, distribution, intégration ou reproduction du code ou du contenu (total ou partiel) à des fins <b>commerciales, lucratives ou professionnelles</b> est <b>strictement interdite</b> sans un accord écrit préalable et explicite de l'auteur.</li>
+                <li><b>Attribution :</b> Toute reproduction ou modification doit conserver la mention de l'auteur originale (Yann Merdy) et la présente notice de droits d'auteur.</li>
+            </ul>
+            <p style="margin-top: 20px; font-style: italic;">Pour toute demande d'utilisation commerciale ou de licence spécifique, veuillez contacter l'auteur à l'adresse indiquée ci-dessus.</p>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // --- MOTEUR MATHÉMATIQUE ---
+
+        // Utilitaire: Entier aléatoire entre min et max (inclus)
+        function rand(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Utilitaire: Entier aléatoire non nul
+        function randNonZero(min, max) {
+            let val = 0;
+            while (val === 0) val = rand(min, max);
+            return val;
+        }
+
+        // Utilitaire: PGCD pour simplification
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+
+        // --- CLASSE FRACTION ---
+        class Frac {
+            constructor(n, d = 1) {
+                if (d === 0) throw new Error("Division par zéro");
+                if (d < 0) { n = -n; d = -d; }
+                const common = Math.abs(gcd(n, d));
+                this.n = n / common;
+                this.d = d / common;
+            }
+
+            toTex(forceSign = false) {
+                if (this.n === 0) return forceSign ? "+0" : "0";
+                let sign = this.n < 0 ? "-" : (forceSign ? "+" : "");
+                let absN = Math.abs(this.n);
+                if (this.d === 1) return `${sign}${absN}`;
+                return `${sign}\\frac{${absN}}{${this.d}}`;
+            }
+            
+            // Affichage propre pour coefficient (ex: 1x -> x, -1x -> -x)
+            toCoefTex(variable = "", isFirst = false) {
+                if (this.n === 0) return ""; // Terme nul
+                
+                let sign = "";
+                if (this.n < 0) sign = "-";
+                else if (!isFirst) sign = "+"; // Ajoute le + si ce n'est pas le 1er terme
+
+                let absN = Math.abs(this.n);
+                
+                // Cas particuliers pour 1 et -1 devant une variable
+                if (absN === 1 && this.d === 1 && variable !== "") {
+                    return `${sign}${variable}`;
+                }
+                
+                if (this.d === 1) return `${sign}${absN}${variable}`;
+                return `${sign}\\frac{${absN}}{${this.d}}${variable}`;
+            }
+
+            add(other) { return new Frac(this.n * other.d + other.n * this.d, this.d * other.d); }
+            sub(other) { return new Frac(this.n * other.d - other.n * this.d, this.d * other.d); }
+            mul(other) { return new Frac(this.n * other.n, this.d * other.d); }
+            sq() { return new Frac(this.n * this.n, this.d * this.d); }
+        }
+
+        // --- GÉNÉRATEURS ---
+
+        function generateCard(level) {
+            // Structure de retour
+            let card = { question: "", answer: "", note: "", type: "" };
+            
+            const types = ['distrib_simple', 'double_distrib', 'identite_plus', 'identite_moins', 'identite_mix'];
+            // Probabilités selon niveau : plus de fractions au niveau 2/4
+            let type = types[rand(0, types.length - 1)];
+
+            // NIVEAU 1 : Entiers Simples ([-10, 10])
+            // NIVEAU 3 : Entiers Complexes ([-20, 20] + 2 vars)
+            if (level === 1 || level === 3) {
+                let limit = level === 1 ? 9 : 19;
+                let hasY = level === 3; // Variable y pour niveau 3
+                
+                // a, b, c, d sont des Frac mais avec d=1
+                let a = new Frac(randNonZero(-limit, limit));
+                let b = new Frac(randNonZero(-limit, limit));
+                let k = new Frac(randNonZero(-limit, limit));
+                let c = new Frac(randNonZero(-limit, limit));
+                let d = new Frac(randNonZero(-limit, limit));
+
+                if (type === 'distrib_simple') {
+                    // k(ax + b)
+                    card.type = "c(ax + b)";
+                    card.question = `$$${k.toCoefTex("", true)}(${a.toCoefTex("x", true)} ${b.toCoefTex("y", false)})$$`;
+                    if(!hasY) card.question = `$$${k.toCoefTex("", true)}(${a.toCoefTex("x", true)} ${b.toCoefTex("", false)})$$`;
+                    
+                    let term1 = k.mul(a);
+                    let term2 = k.mul(b);
+                    
+                    card.answer = `$$${term1.toCoefTex("x", true)} ${term2.toCoefTex(hasY?"y":"", false)}$$`;
+                    card.note = `Distributivité : $${k.toTex()} \\times ${a.toTex()}x$ et $${k.toTex()} \\times ${b.toTex()}${hasY?"y":""}$`;
+                
+                } else if (type === 'double_distrib') {
+                    // (ax + b)(cx + d)
+                    card.type = "(ax+b)(cx+d)";
+                    let var2 = hasY ? "y" : "";
+                    card.question = `$$(${a.toCoefTex("x", true)} ${b.toCoefTex(var2, false)})(${c.toCoefTex("x", true)} ${d.toCoefTex(var2, false)})$$`;
+                    
+                    // ax*cx + ax*d + b*cx + b*d
+                    let x2 = a.mul(c);
+                    let middle = a.mul(d).add(b.mul(c)); // Terme en x (ou xy)
+                    let constTerm = b.mul(d); // Terme constant (ou y^2)
+
+                    if (hasY) {
+                        card.answer = `$$${x2.toCoefTex("x^2", true)} ${middle.toCoefTex("xy", false)} ${constTerm.toCoefTex("y^2", false)}$$`;
+                    } else {
+                         // Si terme du milieu est nul
+                         if(middle.n === 0) card.answer = `$$${x2.toCoefTex("x^2", true)} ${constTerm.toCoefTex("", false)}$$`;
+                         else card.answer = `$$${x2.toCoefTex("x^2", true)} ${middle.toCoefTex("x", false)} ${constTerm.toCoefTex("", false)}$$`;
+                    }
+                    card.note = "Double distributivité : FOIL (First, Outer, Inner, Last)";
+
+                } else if (type === 'identite_plus' || type === 'identite_moins') {
+                    // (ax ± b)²
+                    // Force b positive for display logic inside parenthesis
+                    b = new Frac(Math.abs(b.n)); 
+                    let sign = type === 'identite_plus' ? "+" : "-";
+                    card.type = `(ax ${sign} b)²`;
+                    let var2 = hasY ? "y" : "";
+                    
+                    card.question = `$$(${a.toCoefTex("x", true)} ${sign} ${b.toCoefTex(var2, true)})^2$$`;
+                    
+                    let a2 = a.sq();
+                    let b2 = b.sq();
+                    let ab2 = a.mul(b).mul(new Frac(2)); // 2ab
+                    if (type === 'identite_moins') ab2 = ab2.mul(new Frac(-1));
+
+                    card.answer = `$$${a2.toCoefTex("x^2", true)} ${ab2.toCoefTex(hasY?"xy":"x", false)} + ${b2.toCoefTex(hasY?"y^2":"", true)}$$`;
+                    card.note = `Identité remarquable : $(A ${sign} B)^2 = A^2 ${sign} 2AB + B^2$`;
+                } else {
+                     // (ax - b)(ax + b)
+                     b = new Frac(Math.abs(b.n));
+                     let var2 = hasY ? "y" : "";
+                     card.type = "(A-B)(A+B)";
+                     card.question = `$$(${a.toCoefTex("x", true)} - ${b.toCoefTex(var2, true)})(${a.toCoefTex("x", true)} + ${b.toCoefTex(var2, true)})$$`;
+                     
+                     let a2 = a.sq();
+                     let b2 = b.sq();
+                     card.answer = `$$${a2.toCoefTex("x^2", true)} - ${b2.toCoefTex(hasY?"y^2":"", true)}$$`;
+                     card.note = "Identité remarquable : $A^2 - B^2$";
+                }
+            }
+
+            // NIVEAU 2 (Fractions simples) & 4 (Fractions complexes)
+            if (level === 2 || level === 4) {
+                let limit = 5; 
+                let hasY = level === 4;
+
+                // Générateur de fraction aléatoire
+                const rFrac = () => new Frac(randNonZero(-limit, limit), randNonZero(2, 6)); // Denom entre 2 et 6
+                const rInt = () => new Frac(randNonZero(-limit, limit)); // Parfois un entier
+
+                let a = rFrac();
+                let b = Math.random() > 0.5 ? rFrac() : rInt(); // Mélange entier/frac
+                let k = rFrac();
+                let c = rFrac();
+                
+                // On simplifie les types pour les fractions pour éviter des calculs monstrueux à l'écran
+                if (Math.random() > 0.6) type = 'distrib_simple';
+                else type = 'identite_plus'; // On reuse 'identite_plus' comme placeholder pour (ax+b)² ou double distrib
+
+                if (type === 'distrib_simple') {
+                     card.type = "c(ax ± b)";
+                     card.question = `$$${k.toCoefTex("", true)}\\left(${a.toCoefTex("x", true)} ${b.toCoefTex(hasY?"y":"", false)}\\right)$$`;
+                     let t1 = k.mul(a);
+                     let t2 = k.mul(b);
+                     card.answer = `$$${t1.toCoefTex("x", true)} ${t2.toCoefTex(hasY?"y":"", false)}$$`;
+                     card.note = "Multiplication de fractions : numérateurs entre eux, dénominateurs entre eux.";
+                } else {
+                    // Carré (ax + b)²
+                    // Pour éviter trop complexe en affichage, on force b positif ici
+                    b = new Frac(Math.abs(b.n), b.d);
+                    let var2 = hasY ? "y" : "";
+                    
+                    card.type = "(ax + b)²";
+                    card.question = `$$\\left(${a.toCoefTex("x", true)} + ${b.toCoefTex(var2, true)}\\right)^2$$`;
+                    
+                    let a2 = a.sq();
+                    let b2 = b.sq();
+                    let middle = a.mul(b).mul(new Frac(2));
+                    
+                    card.answer = `$$${a2.toCoefTex("x^2", true)} ${middle.toCoefTex(hasY?"xy":"x", false)} + ${b2.toCoefTex(hasY?"y^2":"", true)}$$`;
+                    card.note = "Double produit : $2 \\times A \\times B$. N'oubliez pas de simplifier.";
+                }
+            }
+
+            return card;
+        }
+
+
+        // --- LOGIQUE APP ---
+        
+        let currentLevel = 1;
+        let cardHistory = [];
+        let historyIndex = -1; // Position actuelle dans l'historique
+        let isFlipped = false;
+        let scoreOk = 0;
+        let scoreKo = 0;
+
+        const cardContainer = document.getElementById('cardContainer');
+        const cardQuestion = document.getElementById('cardQuestion');
+        const cardAnswer = document.getElementById('cardAnswer');
+        const cardNote = document.getElementById('cardNote');
+        const cardTypeBadge = document.getElementById('cardTypeBadge');
+        
+        const currentIndexSpan = document.getElementById('currentIndex');
+        const scoreOkSpan = document.getElementById('score-ok');
+        const scoreKoSpan = document.getElementById('score-ko');
+        
+        // Modal
+        const modal = document.getElementById("copyrightModal");
+        document.getElementById("copyright-btn").onclick = () => modal.style.display = "block";
+        document.getElementsByClassName("close-btn")[0].onclick = () => modal.style.display = "none";
+        window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
+
+        function updateCardDisplay(card) {
+            cardQuestion.innerHTML = card.question;
+            cardAnswer.innerHTML = card.answer;
+            cardNote.textContent = card.note;
+            cardTypeBadge.textContent = card.type;
+            currentIndexSpan.textContent = historyIndex + 1;
+            
+            if (window.MathJax) {
+                window.MathJax.typesetPromise([cardQuestion, cardAnswer]).catch(err => console.log(err));
+            }
+        }
+
+        function loadCard() {
+            // Si on est à la fin de l'historique, on génère une nouvelle carte
+            if (historyIndex === cardHistory.length - 1) {
+                const newCard = generateCard(currentLevel);
+                cardHistory.push(newCard);
+                historyIndex++;
+            }
+            // Sinon on charge celle de l'historique (cas du bouton précédent)
+            // (Note: historyIndex est géré par next/prev)
+            
+            updateCardDisplay(cardHistory[historyIndex]);
+        }
+
+        function nextCard() {
+            if (isFlipped) toggleFlip();
+            setTimeout(() => {
+                // Si on n'est pas au bout de l'historique, on avance juste
+                if (historyIndex < cardHistory.length - 1) {
+                    historyIndex++;
+                    updateCardDisplay(cardHistory[historyIndex]);
+                } else {
+                    // Sinon on génère
+                    const newCard = generateCard(currentLevel);
+                    cardHistory.push(newCard);
+                    historyIndex++;
+                    updateCardDisplay(newCard);
+                }
+            }, isFlipped ? 300 : 0);
+        }
+
+        function prevCard() {
+            if (historyIndex <= 0) return;
+            if (isFlipped) toggleFlip();
+            setTimeout(() => {
+                historyIndex--;
+                updateCardDisplay(cardHistory[historyIndex]);
+            }, isFlipped ? 300 : 0);
+        }
+
+        function toggleFlip() {
+            isFlipped = !isFlipped;
+            cardContainer.classList.toggle('flipped', isFlipped);
+        }
+
+        function updateScore(success) {
+            if(success) {
+                scoreOk++;
+                scoreOkSpan.textContent = scoreOk;
+            } else {
+                scoreKo++;
+                scoreKoSpan.textContent = scoreKo;
+            }
+        }
+
+        // Init
+        document.getElementById('levelSelect').addEventListener('change', (e) => {
+            currentLevel = parseInt(e.target.value);
+            // Reset historique léger lors du changement de niveau
+            cardHistory = [];
+            historyIndex = -1;
+            if(isFlipped) toggleFlip();
+            setTimeout(() => {
+                 const newCard = generateCard(currentLevel);
+                 cardHistory.push(newCard);
+                 historyIndex = 0;
+                 updateCardDisplay(newCard);
+            }, 300);
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', nextCard);
+        document.getElementById('prevBtn').addEventListener('click', prevCard);
+        document.getElementById('flipBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleFlip(); });
+        cardContainer.addEventListener('click', (e) => {
+            if(e.target.closest('button')) return;
+            toggleFlip();
+        });
+
+        document.getElementById('btnSuccess').addEventListener('click', (e) => { e.stopPropagation(); updateScore(true); nextCard(); });
+        document.getElementById('btnFail').addEventListener('click', (e) => { e.stopPropagation(); updateScore(false); nextCard(); });
+
+        document.addEventListener('keydown', (e) => {
+            if (modal.style.display === "block") return;
+            if (e.key === 'ArrowRight') nextCard();
+            if (e.key === 'ArrowLeft') prevCard();
+            if (e.key === ' ' || e.key === 'Enter') toggleFlip();
+        });
+
+        // Premier chargement
+        const initialCard = generateCard(1);
+        cardHistory.push(initialCard);
+        historyIndex = 0;
+        updateCardDisplay(initialCard);
+
+    </script>
+</body>
+</html>
