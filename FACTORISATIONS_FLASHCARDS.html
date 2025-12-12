@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards de Factorisation</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady();
+                }
+            }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+    </script>
+
+    <style>
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .card-inner { transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); }
+        .flipped { transform: rotateY(180deg); }
+        .no-select { user-select: none; -webkit-user-select: none; }
+        
+        /* Widget de Score */
+        #score-panel {
+            position: fixed; top: 20px; right: 20px;
+            background-color: #fff; border: 2px solid #007bff;
+            padding: 10px 15px; border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 50; font-family: 'Segoe UI', sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .score-row { display: flex; gap: 15px; font-size: 1.2em; font-weight: bold; }
+        .score-success { color: #28a745; }
+        .score-fail { color: #dc3545; }
+        .score-title { font-size: 0.8em; color: #666; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col items-center py-8 font-sans text-slate-800 relative">
+
+    <div id="score-panel">
+        <span class="score-title">Mon Score</span>
+        <div class="score-row">
+            <span class="score-success">✅ <span id="score-ok">0</span></span>
+            <span class="score-fail">❌ <span id="score-ko">0</span></span>
+        </div>
+    </div>
+
+    <header class="text-center mb-8 px-4 mt-8 sm:mt-0">
+        <h1 class="text-3xl font-bold text-indigo-700 mb-2">Entraînement à la Factorisation</h1>
+        <p class="text-slate-600">Génération aléatoire infinie &bull; Identités remarquables</p>
+    </header>
+
+    <a href="https://ldv78100ym-hub.github.io/HOME/" id="back-btn" class="absolute top-4 left-4 text-indigo-600 hover:underline">↩ Retour Ressources</a>
+
+    <div class="header text-center mb-4">
+        <span class="block text-lg font-semibold text-slate-700">Cours : Factorisation</span>
+    </div>
+
+    <div class="w-full max-w-2xl px-4 mb-6 flex flex-wrap justify-center gap-4">
+        <div class="relative min-w-[200px]">
+            <label for="level-select" class="sr-only">Choisir le niveau</label>
+            <select id="level-select" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm bg-white border cursor-pointer">
+                <option value="all">Tous les niveaux (Mélangé)</option>
+                <option value="1">Niveau 1 : Entiers relatifs</option>
+                <option value="2">Niveau 2 : Fractions irréductibles</option>
+                <option value="3">Niveau 3 : Expressions (coeff. entiers)</option>
+                <option value="4">Niveau 4 : Expressions (coeff. fractions)</option>
+            </select>
+        </div>
+        <div class="flex items-center bg-white px-3 py-2 rounded-md shadow-sm border border-gray-200">
+            <span class="text-sm font-medium text-gray-500 mr-2">Carte:</span>
+            <span id="counter" class="text-sm font-bold text-indigo-600">1 / 20</span>
+        </div>
+        <button id="btn-regenerate" class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-md shadow-sm transition-colors flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Nouveau jeu
+        </button>
+    </div>
+
+    <div class="w-full max-w-2xl px-4 h-96 perspective-1000">
+        <div id="card" class="card-inner relative w-full h-full cursor-pointer transform-style-3d shadow-xl rounded-2xl group">
+            
+            <div class="absolute w-full h-full backface-hidden bg-white rounded-2xl flex flex-col items-center justify-center p-6 border-2 border-indigo-100 hover:border-indigo-300 transition-colors">
+                <div class="absolute top-4 left-4">
+                    <span id="level-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Niveau 1
+                    </span>
+                </div>
+                <div class="absolute top-4 right-4 text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-sm uppercase tracking-wide text-gray-500 mb-4 font-semibold">Factoriser :</h3>
+                <div id="card-front-content" class="text-2xl sm:text-4xl font-serif text-slate-800 text-center px-2 overflow-x-auto w-full flex justify-center items-center h-32">
+                    $...$
+                </div>
+                <p class="absolute bottom-6 text-xs text-gray-400 italic">Cliquez pour voir la réponse</p>
+            </div>
+
+            <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-indigo-600 rounded-2xl flex flex-col items-center justify-center p-6 text-white shadow-inner">
+                 <div class="absolute top-4 left-4">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-800 text-indigo-200">
+                        Réponse
+                    </span>
+                </div>
+                <h3 class="text-sm uppercase tracking-wide text-indigo-200 mb-2 font-semibold">Forme factorisée :</h3>
+                
+                <div id="card-back-content" class="text-2xl sm:text-4xl font-serif text-white text-center px-2 overflow-x-auto w-full flex justify-center items-center h-24 mb-4">
+                    $...$
+                </div>
+
+                <div id="vote-container" class="flex gap-4 mb-4 z-20" onclick="event.stopPropagation()">
+                    <button id="btn-vote-ok" onclick="vote(true)" class="bg-green-500 hover:bg-green-600 text-white border border-green-400 font-bold py-2 px-4 rounded shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center gap-2">
+                        <span>✅</span> J'ai trouvé
+                    </button>
+                    <button id="btn-vote-ko" onclick="vote(false)" class="bg-red-500 hover:bg-red-600 text-white border border-red-400 font-bold py-2 px-4 rounded shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center gap-2">
+                        <span>❌</span> Raté
+                    </button>
+                </div>
+
+                <div id="card-hint" class="text-sm text-indigo-200 text-center max-w-md px-4 mt-2 border-t border-indigo-500 pt-2">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="w-full max-w-2xl px-4 mt-4 flex justify-center">
+        <button id="btn-lesson" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-6 rounded-full shadow-md transition-transform transform hover:scale-105 flex items-center gap-2">
+            <span>📜</span> Rappel de Cours
+        </button>
+    </div>
+
+    <div class="w-full max-w-2xl px-4 mt-6 flex justify-between gap-4">
+        <button id="btn-prev" class="flex-1 bg-white hover:bg-gray-50 text-slate-700 font-semibold py-3 px-4 border border-gray-300 rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            Précédent
+        </button>
+        <button id="btn-next" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2">
+            Suivant
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            </svg>
+        </button>
+    </div>
+
+    <footer class="mt-8 mb-4 text-center">
+        <button id="btn-copyright" class="text-xs text-slate-500 hover:text-indigo-600 transition-colors underline flex items-center justify-center gap-1 mx-auto">
+            Droits d'auteur
+        </button>
+    </footer>
+
+    <div id="modal-backdrop" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-40 hidden transition-opacity opacity-0 flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative transform scale-95 transition-transform duration-300">
+            <button id="btn-close-modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                ✖
+            </button>
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 mb-4">
+                    <span class="text-2xl">⚖️</span>
+                </div>
+                <h3 class="text-lg leading-6 font-bold text-gray-900 mb-2">Droits d'Auteur et Licence</h3>
+                <div class="mt-2 px-2 text-sm text-gray-600 text-left space-y-3">
+                    <p class="font-medium text-center text-indigo-700">Auteur : Yann Merdy<br>Date : Décembre 2025</p>
+                    <div class="border-t border-gray-200 pt-3">
+                        <ul class="list-none space-y-2">
+                            <li class="flex items-start gap-2"><span class="flex-shrink-0">✅</span><span><strong>Privée/Éducative :</strong> Autorisé.</span></li>
+                            <li class="flex items-start gap-2"><span class="flex-shrink-0">🚫</span><span><strong>Commerciale :</strong> Interdite.</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6">
+                <button id="btn-close-modal-bottom" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-lesson-backdrop" class="fixed inset-0 bg-slate-900 bg-opacity-60 z-50 hidden transition-opacity opacity-0 flex items-center justify-center p-4">
+        <div id="modal-lesson-content" class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 relative transform scale-95 transition-transform duration-300 border-t-4 border-amber-500">
+            <button id="btn-close-lesson" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center">
+                ✖
+            </button>
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 mb-4">
+                    <span class="text-2xl">🎓</span>
+                </div>
+                <h3 class="text-xl leading-6 font-bold text-gray-900 mb-4">Rappel de Cours</h3>
+                
+                <div id="lesson-body" class="text-left text-slate-700 space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    </div>
+
+            </div>
+            <div class="mt-6">
+                <button id="btn-close-lesson-bottom" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-500 text-base font-medium text-white hover:bg-amber-600">Compris !</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DONNÉES DE COURS (RÈGLES) ---
+        const RulesContent = {
+            'diff_sq': {
+                title: "Différence de deux carrés",
+                tex: `Pour factoriser une expression de la forme $a^2 - b^2$, on utilise l'identité remarquable :
+                      $$a^2 - b^2 = (a - b)(a + b)$$
+                      <ul class="list-disc pl-5 mt-2 text-sm">
+                        <li>Repérez $a$ (la racine du premier terme).</li>
+                        <li>Repérez $b$ (la racine du second terme).</li>
+                        <li>Appliquez la formule.</li>
+                      </ul>`
+            },
+            'perf_sq_plus': {
+                title: "Carré parfait (Somme)",
+                tex: `Pour factoriser une expression de la forme $a^2 + 2ab + b^2$, on utilise l'identité :
+                      $$a^2 + 2ab + b^2 = (a + b)^2$$
+                      <ul class="list-disc pl-5 mt-2 text-sm">
+                        <li>Vérifiez que le terme central est bien le double produit $2ab$.</li>
+                        <li>Le signe du terme central est positif ($+$).</li>
+                      </ul>`
+            },
+            'perf_sq_minus': {
+                title: "Carré parfait (Différence)",
+                tex: `Pour factoriser une expression de la forme $a^2 - 2ab + b^2$, on utilise l'identité :
+                      $$a^2 - 2ab + b^2 = (a - b)^2$$
+                      <ul class="list-disc pl-5 mt-2 text-sm">
+                        <li>Vérifiez que le terme central est bien le double produit $2ab$.</li>
+                        <li>Le signe du terme central est négatif ($-$).</li>
+                      </ul>`
+            }
+        };
+
+        // --- UTILITAIRES MATHS ---
+
+        function randInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function randChoice(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+
+        // Classe Fraction simple
+        class Frac {
+            constructor(n, d = 1) {
+                if (d === 0) throw new Error("Division par zéro");
+                if (d < 0) { n = -n; d = -d; }
+                const div = gcd(Math.abs(n), Math.abs(d));
+                this.n = n / div;
+                this.d = d / div;
+            }
+
+            add(other) { return new Frac(this.n * other.d + other.n * this.d, this.d * other.d); }
+            sub(other) { return new Frac(this.n * other.d - other.n * this.d, this.d * other.d); }
+            mul(other) { return new Frac(this.n * other.n, this.d * other.d); }
+            isInteger() { return this.d === 1; }
+
+            toTex(variable = '') {
+                let prefix = '';
+                let num = this.n;
+                if (num < 0) { prefix = '-'; num = -num; }
+                if (num === 0) return '0';
+                let valStr = '';
+                if (this.d === 1) {
+                    if (variable && num === 1) valStr = ''; 
+                    else valStr = num.toString();
+                } else {
+                    valStr = `\\frac{${num}}{${this.d}}`;
+                }
+                return `${prefix}${valStr}${variable}`;
+            }
+
+            toTexValue() {
+                 if (this.d === 1) return this.n.toString();
+                 let prefix = this.n < 0 ? '-' : '';
+                 return `${prefix}\\frac{${Math.abs(this.n)}}{${this.d}}`;
+            }
+        }
+
+        // --- GÉNÉRATEURS ---
+        function formatPoly(a, b) {
+            let s = a.toTex('x');
+            if (b.n > 0) s += '+' + b.toTexValue();
+            else if (b.n < 0) s += b.toTexValue();
+            return s;
+        }
+
+        const Generators = {
+            1: () => {
+                const type = randChoice(['sq_diff', 'perf_sq_plus', 'perf_sq_minus']);
+                if (type === 'sq_diff') { 
+                    const a = randInt(1, 5); 
+                    const b = randInt(1, 9);
+                    const q = (a===1 ? "x^2" : (a*a)+"x^2") + " - " + (b*b);
+                    const ans = `(${a===1?'x':a+'x'} - ${b})(${a===1?'x':a+'x'} + ${b})`;
+                    return { q, a: ans, type: "$a^2 - b^2$", ruleKey: 'diff_sq' };
+                } else {
+                    const isPlus = type === 'perf_sq_plus';
+                    const a = randInt(1, 4);
+                    const b = randInt(1, 6);
+                    const term1 = (a===1 ? "x^2" : (a*a)+"x^2");
+                    const term2 = (2*a*b) + "x";
+                    const term3 = (b*b);
+                    const sign = isPlus ? "+" : "-";
+                    const q = `${term1} ${sign} ${term2} + ${term3}`;
+                    const ans = `(${a===1?'x':a+'x'} ${sign} ${b})^2`;
+                    return { 
+                        q, a: ans, 
+                        type: isPlus ? "$a^2 + 2ab + b^2$" : "$a^2 - 2ab + b^2$",
+                        ruleKey: isPlus ? 'perf_sq_plus' : 'perf_sq_minus'
+                    };
+                }
+            },
+            2: () => {
+                const type = randChoice(['sq_diff', 'perf_sq']);
+                const randFrac = () => {
+                    let n, d;
+                    do { n = randInt(1, 9); d = randChoice([2,3,4,5,7,9]); } while (n%d === 0);
+                    return new Frac(n, d);
+                };
+                const randIntFrac = () => new Frac(randInt(1,5), 1);
+
+                if (type === 'sq_diff') {
+                    let A = randFrac();
+                    let B = randChoice([randFrac(), randIntFrac()]);
+                    const A2 = A.mul(A);
+                    const B2 = B.mul(B);
+                    const q = `${A2.toTex('x^2')} - ${B2.toTexValue()}`;
+                    const ans = `\\left(${A.toTex('x')} - ${B.toTexValue()}\\right)\\left(${A.toTex('x')} + ${B.toTexValue()}\\right)`;
+                    return { q, a: ans, type: "$a^2 - b^2$ (Fractions)", ruleKey: 'diff_sq' };
+                } else {
+                    let A = randIntFrac(); 
+                    let B = randFrac(); 
+                    if(Math.random() > 0.5) [A, B] = [B, A];
+                    const sign = Math.random() > 0.5 ? '+' : '-';
+                    const A2 = A.mul(A);
+                    const B2 = B.mul(B);
+                    const AB2 = A.mul(B).mul(new Frac(2));
+                    const q = `${A2.toTex('x^2')} ${sign} ${AB2.toTex('x')} + ${B2.toTexValue()}`;
+                    const ans = `\\left(${A.toTex('x')} ${sign} ${B.toTexValue()}\\right)^2`;
+                    return { 
+                        q, a: ans, 
+                        type: "Carré parfait (Fractions)",
+                        ruleKey: sign === '+' ? 'perf_sq_plus' : 'perf_sq_minus'
+                    };
+                }
+            },
+            3: () => {
+                const a = randInt(1, 3);
+                const b = randInt(1, 5) * randChoice([-1, 1]);
+                const poly1 = formatPoly(new Frac(a), new Frac(b));
+                
+                if (Math.random() < 0.4) {
+                    const k = randInt(2, 6);
+                    const q = `(${poly1})^2 - ${k*k}`;
+                    const s1 = b - k;
+                    const s2 = b + k;
+                    const p1 = formatPoly(new Frac(a), new Frac(s1));
+                    const p2 = formatPoly(new Frac(a), new Frac(s2));
+                    const ans = `(${p1})(${p2})`;
+                    return { q, a: ans, type: "$(Ax+B)^2 - k^2$", ruleKey: 'diff_sq' };
+                } else {
+                    let c = randInt(1, 3);
+                    let d = randInt(1, 5) * randChoice([-1, 1]);
+                    if (a===c && b===d) d++;
+                    const poly2 = formatPoly(new Frac(c), new Frac(d));
+                    const q = `(${poly1})^2 - (${poly2})^2`;
+                    const t1x = a - c; const t1c = b - d;
+                    const t2x = a + c; const t2c = b + d;
+                    let ansPart1 = "";
+                    if (t1x === 0) ansPart1 = t1c.toString();
+                    else ansPart1 = formatPoly(new Frac(t1x), new Frac(t1c));
+                    if(t1x !== 0 && (t1c > 0 || t1c < 0)) ansPart1 = `(${ansPart1})`;
+                    let ansPart2 = formatPoly(new Frac(t2x), new Frac(t2c));
+                    const ans = `${ansPart1}(${ansPart2})`;
+                    return { q, a: ans, type: "$A^2 - B^2$ (Expressions)", ruleKey: 'diff_sq' };
+                }
+            },
+            4: () => {
+                const randFrac = () => {
+                   let n = randInt(1, 5); let d = randChoice([2,3,4,5]);
+                   if (n%d === 0) n++; 
+                   return new Frac(n * randChoice([-1,1]), d);
+                };
+                const A = randFrac(); const B = randFrac();
+                
+                if (Math.random() < 0.4) {
+                    const K = randFrac();
+                    const poly1 = formatPoly(A, B);
+                    const K2 = K.mul(K);
+                    const q = `\\left(${poly1}\\right)^2 - ${K2.toTexValue()}`;
+                    const s1 = B.sub(K); const s2 = B.add(K);
+                    const p1 = formatPoly(A, s1); const p2 = formatPoly(A, s2);
+                    return { q, a: `\\left(${p1}\\right)\\left(${p2}\\right)`, type: "Complexes", ruleKey: 'diff_sq' };
+                } else {
+                    const C = randFrac(); const D = randFrac();
+                    const poly1 = formatPoly(A, B);
+                    const poly2 = formatPoly(C, D);
+                    const q = `\\left(${poly1}\\right)^2 - \\left(${poly2}\\right)^2`;
+                    const T1A = A.sub(C); const T1B = B.sub(D);
+                    const T2A = A.add(C); const T2B = B.add(D);
+                    let ans1 = formatPoly(T1A, T1B); let ans2 = formatPoly(T2A, T2B);
+                    return { q, a: `\\left(${ans1}\\right)\\left(${ans2}\\right)`, type: "Complexes", ruleKey: 'diff_sq' };
+                }
+            }
+        };
+
+        // --- ÉTAT ET LOGIQUE APP ---
+
+        let currentCards = [];
+        let currentIndex = 0;
+        let isFlipped = false;
+        
+        // Variables Score
+        let scoreOk = 0;
+        let scoreKo = 0;
+        let currentCardVoted = false;
+        
+        // DOM Elements
+        const els = {
+            card: document.getElementById('card'),
+            front: document.getElementById('card-front-content'),
+            back: document.getElementById('card-back-content'),
+            hint: document.getElementById('card-hint'),
+            badge: document.getElementById('level-badge'),
+            counter: document.getElementById('counter'),
+            select: document.getElementById('level-select'),
+            prev: document.getElementById('btn-prev'),
+            next: document.getElementById('btn-next'),
+            regen: document.getElementById('btn-regenerate'),
+            btnVoteOk: document.getElementById('btn-vote-ok'),
+            btnVoteKo: document.getElementById('btn-vote-ko'),
+            scoreOkDisp: document.getElementById('score-ok'),
+            scoreKoDisp: document.getElementById('score-ko'),
+            btnLesson: document.getElementById('btn-lesson'), // Bouton cours
+            lessonBody: document.getElementById('lesson-body') // Contenu du cours
+        };
+
+        function generateDeck(levelStr) {
+            const deck = [];
+            const COUNT = 20;
+            for (let i = 0; i < COUNT; i++) {
+                let lvl = levelStr === 'all' ? randInt(1, 4) : parseInt(levelStr);
+                try {
+                    const data = Generators[lvl]();
+                    deck.push({
+                        id: i, level: lvl,
+                        question: data.q, 
+                        answer: data.a, 
+                        type: data.type,
+                        ruleKey: data.ruleKey, // Stockage de la clé de règle
+                        voted: false
+                    });
+                } catch(e) { console.error(e); }
+            }
+            return deck;
+        }
+
+        function initGame() {
+            const val = els.select.value;
+            currentCards = generateDeck(val);
+            currentIndex = 0;
+            isFlipped = false;
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            els.card.classList.remove('flipped');
+            isFlipped = false;
+
+            const card = currentCards[currentIndex];
+            
+            currentCardVoted = card.voted;
+            updateVoteButtonsUI();
+
+            setTimeout(() => {
+                els.front.innerHTML = `$${card.question}$`;
+                els.back.innerHTML = `$${card.answer}$`;
+                els.hint.innerText = card.type;
+                
+                const cols = {1:'bg-green-100 text-green-800', 2:'bg-blue-100 text-blue-800', 3:'bg-yellow-100 text-yellow-800', 4:'bg-red-100 text-red-800'};
+                els.badge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cols[card.level]}`;
+                els.badge.innerText = `Niveau ${card.level}`;
+                
+                els.counter.innerText = `${currentIndex + 1} / ${currentCards.length}`;
+
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    MathJax.typesetPromise([els.front, els.back]).catch(e => console.log(e));
+                }
+            }, 200);
+        }
+
+        // --- GESTION DU COURS (MODAL) ---
+        
+        function openLesson() {
+            const card = currentCards[currentIndex];
+            const rule = RulesContent[card.ruleKey];
+            
+            if (rule) {
+                // Injection du contenu
+                els.lessonBody.innerHTML = `
+                    <h4 class="font-bold text-indigo-700 mb-2 border-b border-indigo-100 pb-1">${rule.title}</h4>
+                    <div class="text-base">${rule.tex}</div>
+                `;
+                
+                // Afficher modal
+                modalLesson.toggle(true);
+
+                // Rendu MathJax dans la modal
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    MathJax.typesetPromise([els.lessonBody]).catch(e => console.log(e));
+                }
+            } else {
+                els.lessonBody.innerHTML = "<p>Aucun rappel spécifique disponible pour ce type.</p>";
+                modalLesson.toggle(true);
+            }
+        }
+
+
+        // --- GESTION DU SCORE ---
+        
+        function vote(isSuccess) {
+            if (currentCards[currentIndex].voted) return;
+
+            currentCards[currentIndex].voted = true;
+            currentCardVoted = true;
+
+            if (isSuccess) scoreOk++;
+            else scoreKo++;
+
+            updateScoreUI();
+            updateVoteButtonsUI();
+        }
+
+        function updateScoreUI() {
+            els.scoreOkDisp.innerText = scoreOk;
+            els.scoreKoDisp.innerText = scoreKo;
+        }
+
+        function updateVoteButtonsUI() {
+            if (currentCardVoted) {
+                els.btnVoteOk.classList.add('opacity-50', 'cursor-not-allowed');
+                els.btnVoteKo.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                els.btnVoteOk.classList.remove('opacity-50', 'cursor-not-allowed');
+                els.btnVoteKo.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // Listeners
+        els.card.addEventListener('click', () => {
+            els.card.classList.toggle('flipped');
+            isFlipped = !isFlipped;
+        });
+
+        els.next.addEventListener('click', () => {
+            if (currentIndex < currentCards.length - 1) currentIndex++;
+            else currentIndex = 0;
+            updateDisplay();
+        });
+
+        els.prev.addEventListener('click', () => {
+            if (currentIndex > 0) currentIndex--;
+            else currentIndex = currentCards.length - 1;
+            updateDisplay();
+        });
+
+        els.select.addEventListener('change', initGame);
+        els.regen.addEventListener('click', initGame);
+        els.btnLesson.addEventListener('click', openLesson); // Listener bouton cours
+
+        // Clavier
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') els.next.click();
+            if (e.key === 'ArrowLeft') els.prev.click();
+            if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); els.card.click(); }
+        });
+
+        // Modals Logic
+        const createModal = (backdropId, contentId) => {
+            const backdrop = document.getElementById(backdropId);
+            const content = document.getElementById(contentId);
+            return {
+                backdrop, content,
+                toggle: (show) => {
+                    if (show) {
+                        backdrop.classList.remove('hidden');
+                        setTimeout(() => {
+                            backdrop.classList.remove('opacity-0');
+                            content.classList.remove('scale-95');
+                            content.classList.add('scale-100');
+                        }, 10);
+                    } else {
+                        backdrop.classList.add('opacity-0');
+                        content.classList.remove('scale-100');
+                        content.classList.add('scale-95');
+                        setTimeout(() => backdrop.classList.add('hidden'), 300);
+                    }
+                }
+            };
+        }
+
+        const modalCopyright = createModal('modal-backdrop', 'modal-content');
+        const modalLesson = createModal('modal-lesson-backdrop', 'modal-lesson-content');
+        
+        // Copyright Modal Triggers
+        document.getElementById('btn-copyright').addEventListener('click', () => modalCopyright.toggle(true));
+        document.getElementById('btn-close-modal').addEventListener('click', () => modalCopyright.toggle(false));
+        document.getElementById('btn-close-modal-bottom').addEventListener('click', () => modalCopyright.toggle(false));
+        document.getElementById('modal-backdrop').addEventListener('click', (e) => { 
+            if(e.target === document.getElementById('modal-backdrop')) modalCopyright.toggle(false); 
+        });
+
+        // Lesson Modal Triggers
+        document.getElementById('btn-close-lesson').addEventListener('click', () => modalLesson.toggle(false));
+        document.getElementById('btn-close-lesson-bottom').addEventListener('click', () => modalLesson.toggle(false));
+        document.getElementById('modal-lesson-backdrop').addEventListener('click', (e) => { 
+            if(e.target === document.getElementById('modal-lesson-backdrop')) modalLesson.toggle(false); 
+        });
+
+        // Start
+        initGame();
+
+    </script>
+</body>
+</html>
