@@ -184,6 +184,66 @@
 
         /* Classes utilitaires pour MathJax */
         .mjx-chtml { outline: none; }
+	/* Le modal (fond noir semi-transparent) */
+.modal-copyright {
+    display: none; /* Caché par défaut */
+    position: fixed; /* Reste en place */
+    z-index: 2000; /* Assure qu'il est au-dessus de tout */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.6); /* Noir avec opacité */
+}
+
+/* Contenu du modal */
+.modal-content-copyright {
+    background-color: #fefefe;
+    margin: 10vh auto; /* 10% du haut et centré horizontalement */
+    padding: 30px;
+    border: 1px solid #888;
+    width: 90%; 
+    max-width: 700px; /* Largeur maximale */
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+    text-align: left;
+    /* Animation simple */
+    animation-name: animatetop;
+    animation-duration: 0.4s;
+}
+
+@keyframes animatetop {
+    from {top: -300px; opacity: 0}
+    to {top: 0; opacity: 1}
+}
+
+/* Bouton de fermeture (x) */
+.close-button-copyright {
+    color: #aaa;
+    float: right;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-button-copyright:hover,
+.close-button-copyright:focus {
+    color: #333;
+    text-decoration: none;
+}
+
+.modal-content-copyright h3 {
+    margin-top: 15px;
+    color: #3498db;
+}
+
+.modal-content-copyright li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
     </style>
 </head>
 <body>
@@ -213,7 +273,45 @@
     <div class="progress-container">
         Carte <span id="current-index">1</span> / <span id="total-count">20</span>
     </div>
+    <button id="copyrightButton" style="
+    padding: 10px 15px;
+    background-color: #3498db; 
+    color: white; 
+    border: none; 
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+" onmouseover="this.style.backgroundColor='#2980b9'" onmouseout="this.style.backgroundColor='#3498db'">
+    Droits d'auteur
+</button>
 
+<div id="copyrightModal" class="modal-copyright">
+    <div class="modal-content-copyright">
+        <span class="close-button-copyright">&times;</span>
+        
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
+            ⚖️ Droits d'Auteur et Licence d'Utilisation
+        </h2>
+        
+        <p><strong>Auteur :</strong> Yann Merdy (<a href="mailto:yann.merdy@gmail.com">yann.merdy@gmail.com</a>) - Novembre 2025</p>
+        <p><strong>Licence :</strong> Utilisation Non Commerciale</p>
+        
+        <hr style="border-top: 1px solid #ddd;">
+        
+        <p>Ce code HTML/CSS/JavaScript ainsi que le contenu généré par l'application sont la propriété intellectuelle exclusive de l'auteur, Yann Merdy.</p>
+        
+        <h3>Conditions :</h3>
+        <ul style="list-style-type: '👉 '; padding-left: 25px;">
+            <li><strong>Utilisation Privée et Éducative (Autorisée) :</strong> Vous êtes autorisé.e à utiliser, copier, modifier et distribuer ce code et son contenu <em>uniquement</em> à des fins personnelles, éducatives et non lucratives.</li>
+            <li><strong>Utilisation Commerciale (Interdite) :</strong> Toute utilisation, distribution, intégration ou reproduction du code ou du contenu (total ou partiel) à des fins commerciales, lucratives ou professionnelles est <strong>strictement interdite</strong> sans un accord écrit préalable et explicite de l'auteur.</li>
+            <li><strong>Attribution :</strong> Toute reproduction ou modification doit conserver la mention de l'auteur originale (Yann Merdy) et la présente notice de droits d'auteur.</li>
+        </ul>
+        
+        <p style="margin-top: 25px; font-style: italic; color: #555;">Pour toute demande d'utilisation commerciale ou de licence spécifique, veuillez contacter l'auteur à l'adresse indiquée ci-dessus.</p>
+    </div>
+</div>
     <script>
         // --- UTILITAIRES MATHÉMATIQUES ---
 
@@ -492,7 +590,31 @@
             if (e.code === 'ArrowRight') nextCard();
             if (e.code === 'ArrowLeft') prevCard();
         });
+	// Récupérer le modal
+const copyrightModal = document.getElementById("copyrightModal");
 
+// Récupérer le bouton qui ouvre le modal
+const copyrightBtn = document.getElementById("copyrightButton");
+
+// Récupérer l'élément <span> (x) qui ferme le modal
+const copyrightSpan = document.getElementsByClassName("close-button-copyright")[0];
+
+// Fonction pour ouvrir le modal
+copyrightBtn.onclick = function() {
+    copyrightModal.style.display = "block";
+}
+
+// Fonction pour fermer le modal via le 'x'
+copyrightSpan.onclick = function() {
+    copyrightModal.style.display = "none";
+}
+
+// Fonction pour fermer le modal si l'utilisateur clique en dehors
+window.onclick = function(event) {
+    if (event.target === copyrightModal) {
+        copyrightModal.style.display = "none";
+    }
+}
         // Démarrage
         window.onload = initDeck;
 
