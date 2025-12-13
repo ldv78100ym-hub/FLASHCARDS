@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards - Produit Scalaire</title>
+    
+    <!-- Tailwind CSS pour la mise en page -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax pour le rendu des formules mathématiques -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)'], ['$', '$']],
+                displayMath: [['\\[', '\\]'], ['$$', '$$']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        /* Styles spécifiques pour l'effet de retournement (Flip Card) */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        
+        /* Classe ajoutée via JS pour retourner la carte */
+        .flip-card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .flip-card-front {
+            background-color: white;
+            color: #1f2937;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .flip-card-back {
+            background-color: #f0fdf4; /* Vert très clair */
+            color: #1f2937;
+            transform: rotateY(180deg);
+            border: 2px solid #86efac;
+        }
+
+        /* Charte graphique inspirée */
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .math-text {
+            font-size: 1.1rem;
+        }
+
+        /* Styles spécifiques pour la Modale (Popup) */
+        .modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .modal.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .modal.hidden .modal-content {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-blue-900 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold">Flashcards : Le Produit Scalaire</h1>
+            <div class="flex space-x-3">
+                <!-- Bouton "Droits d'auteur" -->
+                <button onclick="document.getElementById('copyright-modal').classList.remove('hidden')" 
+                        class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded transition flex items-center text-sm">
+                    Droits d'auteur
+                </button>
+
+                <!-- Bouton "Nouvelles valeurs" -->
+                <button onclick="window.location.reload()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded transition flex items-center gap-2 text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Nouvelles valeurs
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="container mx-auto p-4 flex-grow">
+        <p class="text-gray-600 mb-6 text-center italic">Cliquez sur une carte pour afficher la réponse. Rechargez la page pour changer les valeurs.</p>
+        
+        <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Les cartes seront générées ici par JavaScript -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-200 text-center p-4 text-gray-600 text-sm mt-8">
+        <p>Généré automatiquement - Inspiré de la ressource GitHub Produit Scalaire</p>
+    </footer>
+
+    <!-- MODALE (POPUP) pour les Droits d'auteur -->
+    <div id="copyright-modal" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-lg p-6 transform translate-y-0" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <!-- Header de la Modale -->
+            <div class="flex justify-between items-start border-b pb-3 mb-4">
+                <h2 id="modal-title" class="text-2xl font-bold text-gray-800">Droits d'auteur & Ressources</h2>
+                <button onclick="document.getElementById('copyright-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 transition">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Corps de la Modale -->
+            <div class="text-gray-700 space-y-4 text-sm">
+                <h2>⚖️ Droits d'Auteur et Licence d'Utilisation</h2>
+<p>Auteur : Yann Merdy (yann.merdy@gmail.com) - Novembre 2025</p>
+
+<p>Licence d'Utilisation Non Commerciale
+Ce code HTML/CSS/JavaScript ainsi que le contenu généré par l'application sont la propriété intellectuelle exclusive de l'auteur, Yann Merdy.</p>
+
+<p><strong>Conditions :</strong></p>
+<ul>
+<li>- Utilisation Privée et Éducative (Autorisée) : Vous êtes autorisé.e à utiliser, copier, modifier et distribuer ce code et son contenu uniquement à des fins personnelles, éducatives et non lucratives.</li>
+<li>- Utilisation Commerciale (Interdite) : Toute utilisation, distribution, intégration ou reproduction du code ou du contenu (total ou partiel) à des fins commerciales, lucratives ou professionnelles est strictement interdite sans un accord écrit préalable et explicite de l'auteur.</li>
+<li>- Attribution : Toute reproduction ou modification doit conserver la mention de l'auteur originale (Yann Merdy) et la présente notice de droits d'auteur.</li>
+</ul>
+<p><strong>Pour toute demande d'utilisation commerciale ou de licence spécifique, veuillez contacter l'auteur à l'adresse indiquée ci-dessus.</strong></p>
+                
+                           </div>
+            
+            <!-- Footer de la Modale -->
+            <div class="mt-6 flex justify-end">
+                <button onclick="document.getElementById('copyright-modal').classList.add('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- FIN MODALE -->
+
+    <script>
+        // Utilitaires de génération aléatoire
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function getRandomNonZero(min, max) {
+            let val = 0;
+            while (val === 0) {
+                val = getRandomInt(min, max);
+            }
+            return val;
+        }
+
+        // Générateurs de contenu de cartes (10 cartes au total)
+        const generators = [
+            {
+                // Carte 1 : Calcul analytique (coordonnées)
+                type: "Analytique",
+                generate: () => {
+                    const ux = getRandomInt(-5, 5);
+                    const uy = getRandomInt(-5, 5);
+                    const vx = getRandomInt(-5, 5);
+                    const vy = getRandomInt(-5, 5);
+                    
+                    const result = (ux * vx) + (uy * vy);
+                    
+                    return {
+                        question: `Soit $\\vec{u}\\begin{pmatrix} ${ux} \\\\ ${uy} \\end{pmatrix}$ et $\\vec{v}\\begin{pmatrix} ${vx} \\\\ ${vy} \\end{pmatrix}$ dans un repère orthonormé.<br><br>Calculer $\\vec{u} \\cdot \\vec{v}$.`,
+                        answer: `Formule : $xx' + yy'$<br><br>$\\vec{u} \\cdot \\vec{v} = (${ux} \\times ${vx}) + (${uy} \\times ${vy})$<br>$\\vec{u} \\cdot \\vec{v} = ${ux*vx} + ${uy*vy}$<br><br><strong>Résultat : ${result}</strong>`
+                    };
+                }
+            },
+            {
+                // Carte 2 : Normes et Angle
+                type: "Géométrique (Angle)",
+                generate: () => {
+                    const angles = [
+                        {deg: 0, rad: "0", cos: "1", val: 1},
+                        {deg: 60, rad: "\\frac{\\pi}{3}", cos: "\\frac{1}{2}", val: 0.5},
+                        {deg: 90, rad: "\\frac{\\pi}{2}", cos: "0", val: 0},
+                        {deg: 120, rad: "\\frac{2\\pi}{3}", cos: "-\\frac{1}{2}", val: -0.5},
+                        {deg: 180, rad: "\\pi", cos: "-1", val: -1}
+                    ];
+                    const selectedAngle = angles[getRandomInt(0, angles.length - 1)];
+                    const normU = getRandomInt(2, 8);
+                    const normV = getRandomInt(2, 8);
+                    
+                    const prodNormes = normU * normV;
+                    let resultDisplay = "";
+
+                    if (selectedAngle.val === 1 || selectedAngle.val === -1 || selectedAngle.val === 0) {
+                         resultDisplay = `${prodNormes * selectedAngle.val}`;
+                    } else if (Math.abs(selectedAngle.val) === 0.5) {
+                         const sign = selectedAngle.val > 0 ? "" : "-";
+                         if (prodNormes % 2 === 0) {
+                            resultDisplay = `${sign}${prodNormes / 2}`;
+                         } else {
+                            resultDisplay = `${sign}\\frac{${prodNormes}}{2}`;
+                         }
+                    } else {
+                        resultDisplay = "Erreur"; // Should not happen with selected angles
+                    }
+
+                    return {
+                        question: `On donne $||\\vec{u}|| = ${normU}$, $||\\vec{v}|| = ${normV}$ et $(\\vec{u}, \\vec{v}) = ${selectedAngle.rad}$.<br><br>Calculer $\\vec{u} \\cdot \\vec{v}$.`,
+                        answer: `Formule : $||\\vec{u}|| \\times ||\\vec{v}|| \\times \\cos(\\theta)$<br><br>$\\vec{u} \\cdot \\vec{v} = ${normU} \\times ${normV} \\times ${selectedAngle.cos}$<br>$\\vec{u} \\cdot \\vec{v} = ${prodNormes} \\times ${selectedAngle.cos}$<br><br><strong>Résultat : $${resultDisplay}$</strong>`
+                    };
+                }
+            },
+            {
+                // Carte 3 : Orthogonalité
+                type: "Orthogonalité",
+                generate: () => {
+                    const isOrtho = Math.random() < 0.5;
+                    let ux, uy, vx, vy;
+                    
+                    if (isOrtho) {
+                        // Générer un vecteur orthogonal
+                        ux = getRandomNonZero(-5, 5);
+                        uy = getRandomNonZero(-5, 5);
+                        // v est orthogonal si vx = -uy et vy = ux (ou multiple)
+                        vx = getRandomNonZero(-2, 2) * (-uy);
+                        vy = getRandomNonZero(-2, 2) * ux;
+                        if (vx === 0 && vy === 0) { // S'assurer que v n'est pas nul
+                            vx = -uy; vy = ux;
+                        }
+                    } else {
+                        // Générer aléatoire (probablement pas orthogonal)
+                        ux = getRandomNonZero(-5, 5);
+                        uy = getRandomNonZero(-5, 5);
+                        vx = getRandomNonZero(-5, 5);
+                        vy = getRandomNonZero(-5, 5);
+                        // S'assurer que ce n'est PAS orthogonal
+                        if (ux*vx + uy*vy === 0) vx += 1;
+                    }
+
+                    const dotProd = (ux * vx) + (uy * vy);
+
+                    return {
+                        question: `Les vecteurs $\\vec{u}\\begin{pmatrix} ${ux} \\\\ ${uy} \\end{pmatrix}$ et $\\vec{v}\\begin{pmatrix} ${vx} \\\\ ${vy} \\end{pmatrix}$ sont-ils orthogonaux ?`,
+                        answer: `Calcul du produit scalaire :<br>$xx' + yy' = (${ux})(${vx}) + (${uy})(${vy}) = ${dotProd}$<br><br><strong>${dotProd === 0 ? "OUI, car le produit scalaire est nul." : "NON, car le produit scalaire n'est pas nul."}</strong>`
+                    };
+                }
+            },
+            {
+                // Carte 4 : Carré scalaire / Colinéarité
+                type: "Carré Scalaire",
+                generate: () => {
+                    const size = getRandomInt(3, 9);
+                    const isSameDirection = Math.random() < 0.5;
+                    const sign = isSameDirection ? "" : "-";
+                    const result = isSameDirection ? size * size : -size * size;
+
+                    return {
+                        question: `Soit $A$, $B$, $C$, $D$ quatre points tels que $\\vec{AB}$ et $\\vec{CD}$ sont colinéaires et $AB=CD=${size}$.<br>Calculer $\\vec{AB} \\cdot \\vec{CD}$ si les vecteurs sont de ${isSameDirection ? "même sens" : "sens contraires"}.`,
+                        answer: `Formule : $\\vec{AB} \\cdot \\vec{CD} = ${sign} AB \\times CD$<br>$\\vec{AB} \\cdot \\vec{CD} = ${sign} ${size} \\times ${size}$<br><br><strong>Résultat : ${result}</strong>`
+                    };
+                }
+            },
+            {
+                // Carte 5 : Identité remarquable vectorielle (||u+v||^2)
+                type: "Identités (Somme)",
+                generate: () => {
+                    const normU = getRandomInt(2, 5);
+                    const normV = getRandomInt(2, 5);
+                    const dotUV = getRandomInt(-10, 10);
+                    
+                    // Calcul de ||u+v||^2 = u^2 + 2u.v + v^2
+                    const result = (normU*normU) + 2*dotUV + (normV*normV);
+
+                    return {
+                        question: `On donne $||\\vec{u}||=${normU}$, $||\\vec{v}||=${normV}$ et $\\vec{u} \\cdot \\vec{v} = ${dotUV}$.<br><br>Calculer $||\\vec{u} + \\vec{v}||^2$.`,
+                        answer: `Formule : $||\\vec{u}+\\vec{v}||^2 = ||\\vec{u}||^2 + 2\\vec{u}\\cdot\\vec{v} + ||\\vec{v}||^2$<br><br>$= ${normU}^2 + 2(${dotUV}) + ${normV}^2$<br>$= ${normU*normU} + ${2*dotUV} + ${normV*normV}$<br><br><strong>Résultat : ${result}</strong>`
+                    };
+                }
+            },
+             {
+                // Carte 6 : Projection orthogonale
+                type: "Projection",
+                generate: () => {
+                    const AB = getRandomInt(4, 10);
+                    const AH = getRandomInt(2, AB + 2);
+                    const sameSense = Math.random() < 0.5;
+                    const result = sameSense ? AB * AH : -AB * AH;
+                    const sign = sameSense ? "" : "-";
+
+                    return {
+                        question: `Soit $H$ le projeté orthogonal de $C$ sur $(AB)$.<br>On a $AB = ${AB}$ et $AH = ${AH}$.<br><br>Calculer $\\vec{AB} \\cdot \\vec{AC}$ si $\\vec{AB}$ et $\\vec{AH}$ sont de ${sameSense ? "même sens" : "sens opposés"}.`,
+                        answer: `Par projection : $\\vec{AB} \\cdot \\vec{AC} = \\vec{AB} \\cdot \\vec{AH}$<br>Formule : $\\vec{AB} \\cdot \\vec{AH} = ${sign} AB \\times AH$<br><br>$= ${sign} ${AB} \\times ${AH}$<br><br><strong>Résultat : ${result}</strong>`
+                    };
+                }
+            },
+            {
+                // Carte 7 : Théorème d'Al-Kashi (Calcul de Longueur)
+                type: "Théorème d'Al-Kashi",
+                generate: () => {
+                    const a = getRandomInt(4, 8);
+                    const b = getRandomInt(4, 8);
+                    const angleDeg = [0, 60, 90, 120, 180][getRandomInt(0, 4)];
+                    const angleRad = { 0: "0", 60: "\\frac{\\pi}{3}", 90: "\\frac{\\pi}{2}", 120: "\\frac{2\\pi}{3}", 180: "\\pi" }[angleDeg];
+                    const cosVal = { 0: 1, 60: 0.5, 90: 0, 120: -0.5, 180: -1 }[angleDeg];
+                    
+                    const c_squared = a * a + b * b - 2 * a * b * cosVal;
+                    
+                    let resultDisplay;
+                    if (angleDeg === 60) {
+                        const val = a*a + b*b - a*b;
+                        resultDisplay = val;
+                    } else if (angleDeg === 120) {
+                        const val = a*a + b*b + a*b;
+                        resultDisplay = val;
+                    } else {
+                        resultDisplay = c_squared;
+                    }
+
+                    return {
+                        question: `Dans le triangle $ABC$, on a $AB = ${a}$, $AC = ${b}$ et $\\widehat{BAC} = ${angleDeg}^\\circ$.<br><br>Calculer la valeur exacte de $BC^2$.`,
+                        answer: `Formule (Al-Kashi) : $BC^2 = AB^2 + AC^2 - 2 AB \\cdot AC \\cos(\\widehat{BAC})$<br><br>$BC^2 = ${a}^2 + ${b}^2 - 2(${a})(${b}) \\cos(${angleDeg}^\\circ)$<br>$\\cos(${angleDeg}^\\circ) = ${cosVal}$<br><br><strong>Résultat : $BC^2 = ${resultDisplay}$</strong>`
+                    };
+                }
+            },
+            {
+                // Carte 8 : Formule de la Norme Alternée / Médiane (Calcul de u.v)
+                type: "Formule de la Norme",
+                generate: () => {
+                    const normU = getRandomInt(3, 7);
+                    const normV = getRandomInt(3, 7);
+                    const dotUV = getRandomInt(-5, 5); // Déterminer le produit scalaire
+                    
+                    // Calcul de ||u+v||^2 = ||u||^2 + ||v||^2 + 2(u.v)
+                    const normSumSq = normU*normU + normV*normV + 2*dotUV;
+                    
+                    // On demande à l'utilisateur de retrouver u.v
+                    return {
+                        question: `On donne :<br>$||\\vec{u}|| = ${normU}$, $||\\vec{v}|| = ${normV}$ et $||\\vec{u} + \\vec{v}||^2 = ${normSumSq}$.<br><br>Calculer $\\vec{u} \\cdot \\vec{v}$.`,
+                        answer: `On utilise la formule : $2\\vec{u}\\cdot\\vec{v} = ||\\vec{u}+\\vec{v}||^2 - ||\\vec{u}||^2 - ||\\vec{v}||^2$<br><br>$2\\vec{u}\\cdot\\vec{v} = ${normSumSq} - ${normU}^2 - ${normV}^2$<br>$2\\vec{u}\\cdot\\vec{v} = ${normSumSq} - ${normU*normU} - ${normV*normV}$<br>$2\\vec{u}\\cdot\\vec{v} = ${normSumSq - normU*normU - normV*normV}$<br><br><strong>Résultat : $\\vec{u} \\cdot \\vec{v} = ${dotUV}$</strong>`
+                    };
+                }
+            },
+            {
+                // Carte 9 : Calcul d'une Norme (Longueur)
+                type: "Calcul de Norme",
+                generate: () => {
+                    const ux = getRandomNonZero(-6, 6);
+                    const uy = getRandomNonZero(-6, 6);
+                    
+                    const uSq = ux * ux + uy * uy;
+                    
+                    return {
+                        question: `Soit $\\vec{u}\\begin{pmatrix} ${ux} \\\\ ${uy} \\end{pmatrix}$ dans un repère orthonormé.<br><br>Calculer $||\\vec{u}||$ (valeur exacte).`,
+                        answer: `Formule : $||\\vec{u}|| = \\sqrt{x^2 + y^2}$<br><br>$||\\vec{u}|| = \\sqrt{${ux}^2 + ${uy}^2}$<br>$||\\vec{u}|| = \\sqrt{${ux*ux} + ${uy*uy}}$<br><br><strong>Résultat : $||\\vec{u}|| = \\sqrt{${uSq}}$</strong>`
+                    };
+                }
+            },
+            {
+                // Carte 10 : Recherche de Coordonnée pour Orthogonalité
+                type: "Orthogonalité (Inconnue)",
+                generate: () => {
+                    const ux = getRandomNonZero(-4, 4);
+                    const uy = getRandomNonZero(-4, 4);
+                    const vx = getRandomNonZero(-5, 5);
+                    // On cherche 'vy' tel que u.v = 0
+                    // ux*vx + uy*vy = 0  =>  uy*vy = -ux*vx  =>  vy = -ux*vx / uy
+                    
+                    // Assurer que le résultat est un entier simple
+                    let vy_num = -ux * vx;
+                    let vy_den = uy;
+                    
+                    // Simplification (GCD non nécessaire ici, on assure que c'est divisible)
+                    let vy_val;
+                    if (vy_num % vy_den !== 0) {
+                        // Si ce n'est pas divisible, on change vy_num pour qu'il soit divisible par uy
+                        const factor = Math.abs(vy_den);
+                        vy_num *= factor;
+                        vy_val = vy_num / vy_den;
+                    } else {
+                        vy_val = vy_num / vy_den;
+                    }
+
+                    return {
+                        question: `Soit $\\vec{u}\\begin{pmatrix} ${ux} \\\\ ${uy} \\end{pmatrix}$ et $\\vec{v}\\begin{pmatrix} ${vx} \\\\ y \\end{pmatrix}$.<br><br>Quelle doit être la valeur de $y$ pour que $\\vec{u}$ et $\\vec{v}$ soient orthogonaux ?`,
+                        answer: `Condition : $\\vec{u} \\cdot \\vec{v} = 0$<br>$xx' + yy' = 0$<br>$(${ux})(${vx}) + (${uy})y = 0$<br>${ux*vx} + ${uy}y = 0$<br>${uy}y = -${ux*vx}$<br><br><strong>Résultat : $y = \\frac{-${ux*vx}}{${uy}} = ${vy_val}$</strong>`
+                    };
+                }
+            }
+        ];
+
+        // Fonction d'initialisation
+        function initCards() {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = ''; // Clear previous
+
+            generators.forEach((gen, index) => {
+                const data = gen.generate();
+                const cardHTML = `
+                <div class="perspective-1000 h-64">
+                    <div class="flip-card-inner h-full w-full transition-transform duration-500" onclick="this.classList.toggle('is-flipped')">
+                        <!-- Front -->
+                        <div class="flip-card-front flex flex-col justify-between">
+                            <span class="text-xs font-bold text-blue-500 uppercase tracking-widest self-start">${gen.type}</span>
+                            <div class="math-text">${data.question}</div>
+                            <span class="text-xs text-gray-400 mt-2">Cliquer pour voir la réponse</span>
+                        </div>
+                        <!-- Back -->
+                        <div class="flip-card-back">
+                            <h3 class="font-bold text-green-700 mb-2 border-b border-green-200 pb-1 w-full">Solution</h3>
+                            <div class="math-text text-sm md:text-base">${data.answer}</div>
+                        </div>
+                    </div>
+                </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHTML);
+            });
+
+            // Demander à MathJax de rendre le nouveau contenu
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // Ajout d'un écouteur pour fermer la modale en cliquant en dehors
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('copyright-modal');
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+        });
+
+
+        // Lancer au chargement
+        window.onload = initCards;
+
+    </script>
+</body>
+</html>
