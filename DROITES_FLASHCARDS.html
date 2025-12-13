@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards : Droites & Fonctions Affines</title>
+    
+    <!-- MathJax pour le rendu mathématique -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --primary: #2c3e50;    /* Bleu nuit (repris de DROITES.html) */
+            --accent: #3498db;     /* Bleu clair */
+            --success: #27ae60;    /* Vert */
+            --danger: #c0392b;     /* Rouge */
+            --text: #333;
+            --bg: #ecf0f1;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        /* --- CONTENEUR DE LA CARTE --- */
+        .scene {
+            width: 600px;
+            height: 400px;
+            perspective: 1000px;
+            margin-bottom: 30px;
+        }
+
+        /* Pour mobile */
+        @media (max-width: 650px) {
+            .scene { width: 95%; height: 50vh; }
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-radius: 15px;
+        }
+
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card__face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            box-sizing: border-box;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.3rem;
+            border: 2px solid #bdc3c7;
+        }
+
+        .card__face--front {
+            background-color: var(--card-bg);
+            color: var(--primary);
+        }
+        
+        .card__face--front::after {
+            content: 'CLIQUER POUR RETOURNER';
+            position: absolute;
+            bottom: 15px;
+            font-size: 0.8rem;
+            color: #95a5a6;
+            font-weight: bold;
+        }
+
+        .card__face--back {
+            background-color: var(--primary);
+            color: white;
+            transform: rotateY(180deg);
+            border-color: var(--primary);
+        }
+
+        .category-tag {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--accent);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .question-text {
+            margin-bottom: 20px;
+        }
+
+        .answer-text {
+            font-size: 1.4rem;
+        }
+
+        .formula {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+
+        /* --- CONTRÔLES --- */
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            background-color: var(--accent);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .progress-container {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+
+        /* Classes utilitaires pour MathJax */
+        .mjx-chtml { outline: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Flashcards Mathématiques</h1>
+        <div class="subtitle">Droites, Fonctions Affines & Systèmes</div>
+    </header>
+
+    <div class="scene">
+        <div class="card" onclick="flipCard()">
+            <div class="card__face card__face--front">
+                <span class="category-tag" id="card-category">Catégorie</span>
+                <div class="question-text" id="card-question">Chargement...</div>
+            </div>
+            <div class="card__face card__face--back">
+                <div class="answer-text" id="card-answer">...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-secondary" onclick="prevCard()">← Précédent</button>
+        <button class="btn" onclick="nextCard()">Suivant →</button>
+    </div>
+
+    <div class="progress-container">
+        Carte <span id="current-index">1</span> / <span id="total-count">20</span>
+    </div>
+
+    <script>
+        // --- UTILITAIRES MATHÉMATIQUES ---
+
+        // Générateur aléatoire (min inclus, max inclus)
+        const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        
+        // Générateur aléatoire non nul
+        const randNonZero = (min, max) => {
+            let r = 0;
+            while(r === 0) r = rand(min, max);
+            return r;
+        };
+
+        // Classe Fraction pour gérer l'affichage propre (ex: 1/3 au lieu de 0.333)
+        class Fraction {
+            constructor(n, d = 1) {
+                if (d < 0) { n = -n; d = -d; }
+                this.n = n;
+                this.d = d;
+            }
+            // PGCD pour simplification
+            gcd(a, b) { return b === 0 ? a : this.gcd(b, a % b); }
+            
+            simplify() {
+                const divisor = Math.abs(this.gcd(this.n, this.d));
+                return new Fraction(this.n / divisor, this.d / divisor);
+            }
+            
+            toTex() {
+                if (this.d === 1) return `${this.n}`;
+                if (this.n === 0) return "0";
+                return `\\dfrac{${this.n}}{${this.d}}`;
+            }
+
+            add(other) { return new Fraction(this.n * other.d + other.n * this.d, this.d * other.d).simplify(); }
+            sub(other) { return new Fraction(this.n * other.d - other.n * this.d, this.d * other.d).simplify(); }
+            mult(other) { return new Fraction(this.n * other.n, this.d * other.d).simplify(); }
+        }
+
+        // Formatage nombre relatif (ex: -3 ou +3)
+        const fmtSigned = (n) => n >= 0 ? `+ ${n}` : `${n}`;
+        const fmtPar = (n) => n < 0 ? `(${n})` : `${n}`;
+
+        // --- GÉNÉRATEURS DE QUESTIONS ---
+        // Ces fonctions créent dynamiquement le contenu basé sur le cours DROITES.html
+
+        const generators = [
+            // 1. DÉFINITIONS & VOCABULAIRE
+            () => {
+                const m = randNonZero(-5, 5);
+                const p = rand(-5, 5);
+                return {
+                    cat: "Définition",
+                    q: `Dans l'expression de la fonction affine : \\[ f(x) = ${m}x ${fmtSigned(p)} \\] <br> Comment appelle-t-on le nombre \\( ${m} \\) ?`,
+                    a: `C'est le <strong>coefficient directeur</strong> (ou pente).<br><br>Il indique l'inclinaison de la droite.`
+                };
+            },
+            () => {
+                const m = randNonZero(-5, 5);
+                const p = rand(-5, 5);
+                return {
+                    cat: "Définition",
+                    q: `Dans l'expression de la fonction affine : \\[ f(x) = ${m}x ${fmtSigned(p)} \\] <br> Comment appelle-t-on le nombre \\( ${p} \\) ?`,
+                    a: `C'est <strong>l'ordonnée à l'origine</strong>.<br><br>C'est la valeur de \\( y \\) lorsque \\( x = 0 \\) (intersection avec l'axe vertical).`
+                };
+            },
+
+            // 2. VARIATIONS (Sens de variation)
+            () => {
+                const m = randNonZero(-9, 9);
+                const p = rand(-9, 9);
+                return {
+                    cat: "Variations",
+                    q: `Quel est le sens de variation de la fonction : \\[ f(x) = ${m}x ${fmtSigned(p)} \\]`,
+                    a: m > 0 
+                        ? `La fonction est <strong>croissante</strong> car le coefficient directeur \\( m = ${m} \\) est positif.` 
+                        : `La fonction est <strong>décroissante</strong> car le coefficient directeur \\( m = ${m} \\) est négatif.`
+                };
+            },
+
+            // 3. APPARTENANCE D'UN POINT
+            () => {
+                const m = rand(-3, 3);
+                const p = rand(-4, 4);
+                const xA = rand(-5, 5);
+                // 50% de chance d'être sur la droite
+                const isTrue = Math.random() > 0.5;
+                const yA = isTrue ? (m * xA + p) : (m * xA + p + randNonZero(-2, 2));
+
+                return {
+                    cat: "Calcul / Appartenance",
+                    q: `Le point \\( A(${xA}; ${yA}) \\) appartient-il à la droite d'équation : \\[ y = ${m}x ${fmtSigned(p)} \\]`,
+                    a: isTrue 
+                        ? `<strong>OUI</strong><br>Calcul : \\( ${m} \\times ${fmtPar(xA)} ${fmtSigned(p)} = ${m*xA+p} \\).<br>On retrouve bien \\( y_A = ${yA} \\).`
+                        : `<strong>NON</strong><br>Calcul : \\( ${m} \\times ${fmtPar(xA)} ${fmtSigned(p)} = ${m*xA+p} \\).<br>Ce n'est pas égal à \\( y_A = ${yA} \\).`
+                };
+            },
+
+            // 4. CALCUL DE M (PENTE)
+            () => {
+                const xA = rand(-5, 5);
+                let xB = xA; while(xB === xA) xB = rand(-5, 5); // xA != xB
+                const yA = rand(-5, 5);
+                const yB = rand(-5, 5);
+                
+                const num = yB - yA;
+                const den = xB - xA;
+                const mFrac = new Fraction(num, den).simplify();
+
+                return {
+                    cat: "Calcul de m",
+                    q: `Calculer le coefficient directeur \\( m \\) de la droite passant par : <br> \\( A(${xA}; ${yA}) \\) et \\( B(${xB}; ${yB}) \\)`,
+                    a: `Formule : \\[ m = \\dfrac{y_B - y_A}{x_B - x_A} \\] <br> Calcul : \\[ m = \\dfrac{${yB} - ${fmtPar(yA)}}{${xB} - ${fmtPar(xA)}} = ${mFrac.toTex()} \\]`
+                };
+            },
+
+            // 5. CALCUL DE P (ORDONNÉE À L'ORIGINE)
+            () => {
+                const m = randNonZero(-3, 3);
+                const xA = rand(-4, 4);
+                const yA = rand(-4, 4);
+                // p = yA - m*xA
+                const pVal = yA - (m * xA);
+
+                return {
+                    cat: "Calcul de p",
+                    q: `Une droite a pour coefficient directeur \\( m = ${m} \\) et passe par \\( A(${xA}; ${yA}) \\).<br>Calculer son ordonnée à l'origine \\( p \\).`,
+                    a: `On utilise \\( y = mx + p \\) avec le point A : <br> \\[ ${yA} = ${m} \\times ${fmtPar(xA)} + p \\] \\[ ${yA} = ${m*xA} + p \\] \\[ p = ${yA} - ${fmtPar(m*xA)} = ${pVal} \\]`
+                };
+            },
+
+            // 6. DROITES PARTICULIÈRES (Verticale / Horizontale)
+            () => {
+                const type = Math.random() > 0.5 ? 'vert' : 'horiz';
+                const val = rand(-5, 5);
+                
+                if (type === 'vert') {
+                    return {
+                        cat: "Droites Particulières",
+                        q: `Quelle est l'équation de la droite verticale passant par le point \\( A(${val}; 3) \\) ?`,
+                        a: `<strong>\\( x = ${val} \\)</strong><br><br>Une droite verticale a une équation de la forme \\( x = c \\).`
+                    };
+                } else {
+                    return {
+                        cat: "Droites Particulières",
+                        q: `Quelle est l'équation de la droite horizontale passant par le point \\( A(2; ${val}) \\) ?`,
+                        a: `<strong>\\( y = ${val} \\)</strong><br><br>Une droite horizontale a un coefficient directeur \\( m=0 \\).`
+                    };
+                }
+            },
+
+            // 7. POSITIONS RELATIVES
+            () => {
+                const m1 = randNonZero(-3, 3);
+                const p1 = rand(-3, 3);
+                const p2 = p1 + randNonZero(-3, 3); // p2 != p1
+                
+                const type = Math.random();
+                let m2, textType;
+                
+                if (type < 0.33) {
+                    // Parallèles
+                    m2 = m1;
+                    textType = "Parallèles";
+                } else if (type < 0.66) {
+                    // Sécantes quelconques
+                    m2 = m1 + randNonZero(-2, 2);
+                    if (m1 * m2 === -1) m2 += 1; // Eviter perpendiculaire par hasard
+                    textType = "Sécantes";
+                } else {
+                    // Perpendiculaires (cas simple avec 1 et -1 ou 0.5 et -2)
+                    // On force un cas simple pour l'exercice mental
+                    return {
+                         cat: "Positions Relatives",
+                         q: `Les droites \\( d_1: y = 2x + 1 \\) et \\( d_2: y = -0.5x + 3 \\) sont-elles parallèles ou perpendiculaires ?`,
+                         a: `<strong>Perpendiculaires</strong><br><br>Car le produit de leurs coefficients directeurs vaut -1 :<br>\\[ 2 \\times (-0.5) = -1 \\]`
+                    };
+                }
+
+                return {
+                    cat: "Positions Relatives",
+                    q: `Quelle est la position relative des droites :<br>\\( d_1: y = ${m1}x ${fmtSigned(p1)} \\)<br>\\( d_2: y = ${m2}x ${fmtSigned(p2)} \\)`,
+                    a: `Elles sont <strong>${textType}</strong>.<br><br>On compare les coefficients directeurs \\( m_1 = ${m1} \\) et \\( m_2 = ${m2} \\).`
+                };
+            },
+
+            // 8. TABLEAU DE SIGNES
+            () => {
+                const m = randNonZero(-5, 5);
+                const p = randNonZero(-5, 5) * (Math.random() > 0.5 ? 1 : -1); 
+                // Racine x0 = -p/m
+                const rootFrac = new Fraction(-p, m).simplify();
+                
+                return {
+                    cat: "Signe",
+                    q: `Pour la fonction \\( f(x) = ${m}x ${fmtSigned(p)} \\), quel est le signe <strong>après</strong> la racine (à droite) ?`,
+                    a: `Le signe est <strong>${m > 0 ? 'Positif (+)' : 'Négatif (-)'}</strong>.<br><br>À droite de la racine, une fonction affine est toujours du signe de \\( m \\) (ici \\( m=${m} \\)).`
+                };
+            }
+        ];
+
+        // --- GESTION DE L'APPLICATION ---
+
+        let deck = [];
+        let currentIndex = 0;
+        const DECK_SIZE = 20;
+
+        function initDeck() {
+            deck = [];
+            for (let i = 0; i < DECK_SIZE; i++) {
+                // Choisir un générateur aléatoire dans la liste
+                const gen = generators[Math.floor(Math.random() * generators.length)];
+                deck.push(gen());
+            }
+            currentIndex = 0;
+            displayCard();
+        }
+
+        function displayCard() {
+            const card = deck[currentIndex];
+            const cardEl = document.querySelector('.card');
+            
+            // Si la carte est retournée, on la remet face visible avant de changer le contenu
+            if (cardEl.classList.contains('is-flipped')) {
+                cardEl.classList.remove('is-flipped');
+                setTimeout(() => updateContent(card), 300); // Attendre la mi-rotation
+            } else {
+                updateContent(card);
+            }
+
+            // Mise à jour compteur
+            document.getElementById('current-index').innerText = currentIndex + 1;
+            document.getElementById('total-count').innerText = DECK_SIZE;
+        }
+
+        function updateContent(card) {
+            document.getElementById('card-category').innerText = card.cat;
+            document.getElementById('card-question').innerHTML = card.q;
+            document.getElementById('card-answer').innerHTML = card.a;
+            
+            // Relancer le rendu MathJax pour les nouvelles formules
+            if (window.MathJax) {
+                MathJax.typesetPromise([
+                    document.getElementById('card-question'),
+                    document.getElementById('card-answer')
+                ]);
+            }
+        }
+
+        function flipCard() {
+            document.querySelector('.card').classList.toggle('is-flipped');
+        }
+
+        function nextCard() {
+            if (currentIndex < deck.length - 1) {
+                currentIndex++;
+                displayCard();
+            } else {
+                // Fin du paquet -> On régénère ?
+                if(confirm("Bravo ! Vous avez terminé la série. Voulez-vous générer 20 nouvelles cartes ?")) {
+                    initDeck();
+                }
+            }
+        }
+
+        function prevCard() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                displayCard();
+            }
+        }
+
+        // Gestion clavier
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') flipCard();
+            if (e.code === 'ArrowRight') nextCard();
+            if (e.code === 'ArrowLeft') prevCard();
+        });
+
+        // Démarrage
+        window.onload = initDeck;
+
+    </script>
+</body>
+</html>
