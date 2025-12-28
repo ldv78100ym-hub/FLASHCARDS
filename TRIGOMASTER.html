@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrigoMaster - Flashcards Premium</title>
+    
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        .perspective-1000 { perspective: 1000px; }
+        .card-inner {
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .is-flipped { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+        
+        :root {
+            --primary: #2c3e50;
+            --accent: #d35400;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col items-center py-8 px-4 font-sans text-slate-800">
+
+    <div class="w-full max-w-lg mb-6 text-center">
+        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">TrigoMaster</span></h1>
+        <div id="progressText" class="text-sm font-medium text-slate-500 uppercase tracking-widest">Initialisation...</div>
+        <div class="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+            <div id="progressBar" class="bg-orange-500 h-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="card-container w-full max-w-lg perspective-1000 group">
+        <div id="card" class="card-inner relative w-full h-[550px] cursor-pointer" onclick="this.classList.toggle('is-flipped')">
+            
+            <div class="backface-hidden absolute inset-0 bg-white rounded-3xl shadow-xl border border-slate-100 p-8 flex flex-col items-center justify-between">
+                <div class="text-center">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Question</span>
+                    <h2 id="front-cat" class="text-lg font-bold text-orange-700 mt-1 min-h-[3rem] flex items-center justify-center italic"></h2>
+                </div>
+                
+                <div id="front-content" class="text-2xl text-center font-medium px-4"></div>
+                <canvas id="front-cvs" width="280" height="280" class="hidden my-4"></canvas>
+                
+                <p class="text-xs text-slate-300 italic">Cliquez pour retourner la carte</p>
+            </div>
+
+            <div class="backface-hidden absolute inset-0 bg-orange-50 rounded-3xl shadow-xl border-2 border-orange-200 p-8 flex flex-col items-center justify-between rotateY-180 [transform:rotateY(180deg)]">
+                <div class="text-center">
+                    <span class="text-xs font-bold text-orange-400 uppercase tracking-tighter">Solution</span>
+                    <h2 id="back-cat" class="text-lg font-bold text-slate-800 mt-1 italic"></h2>
+                </div>
+                
+                <div id="back-content" class="text-3xl text-center font-bold text-slate-900 px-4"></div>
+                <canvas id="back-cvs" width="280" height="280" class="hidden my-4"></canvas>
+
+                <button onclick="event.stopPropagation(); nextCard();" class="bg-slate-900 text-white px-6 py-2 rounded-full font-bold hover:bg-slate-700 transition-colors shadow-lg">
+                    Continuer →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 flex gap-4">
+        <button onclick="restartSession('mix')" class="flex items-center gap-2 bg-white border border-slate-200 px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:bg-slate-50 transition-all">
+            🔄 Nouvelle Série
+        </button>
+        <button onclick="toggleModal(true)" class="text-slate-400 hover:text-slate-600 transition-colors">
+            ⚖️ Droits d'auteur
+        </button>
+    </div>
+
+    <div id="copyrightModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 class="text-xl font-bold mb-4">⚖️ Droits d'Auteur et Licence d'Utilisation</h3>
+            <p class="text-slate-600 text-sm leading-relaxed mb-4">
+            <p><b>Auteur : Yann Merdy (yann.merdy@gmail.com)</b> - Novembre 2025</p>
+            <hr>
+            <h3>Licence d'Utilisation Non Commerciale</h3>
+            <p>Ce code HTML/CSS/JavaScript ainsi que le contenu généré par l'application sont la propriété intellectuelle exclusive de l'auteur, Yann Merdy.</p>
+            
+            <h4>Conditions :</h4>
+            <ul>
+                <li><b>Utilisation Privée et Éducative (Autorisée) :</b> Vous êtes autorisé.e à utiliser, copier, modifier et distribuer ce code et son contenu <b>uniquement</b> à des fins <b>personnelles, éducatives et non lucratives</b>.</li>
+                <li><b>Utilisation Commerciale (Interdite) :</b> Toute utilisation, distribution, intégration ou reproduction du code ou du contenu (total ou partiel) à des fins <b>commerciales, lucratives ou professionnelles</b> est <b>strictement interdite</b> sans un accord écrit préalable et explicite de l'auteur.</li>
+                <li><b>Attribution :</b> Toute reproduction ou modification doit conserver la mention de l'auteur originale (Yann Merdy) et la présente notice de droits d'auteur.</li>
+            </ul>
+            <p style="margin-top: 20px; font-style: italic;">Pour toute demande d'utilisation commerciale ou de licence spécifique, veuillez contacter l'auteur à l'adresse indiquée ci-dessus.</p>
+
+            <button onclick="toggleModal(false)" class="w-full bg-slate-100 py-2 rounded-lg font-bold text-slate-700 hover:bg-slate-200">Fermer</button>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIQUE MATHÉMATIQUE ---
+        const DECK_SIZE = 30;
+        let currentIndex = 0;
+        let lastScenarioKey = null;
+
+        const gcd = (a, b) => b === 0 ? Math.abs(a) : gcd(b, a % b);
+
+        function simplifyFraction(n, d) {
+            if (n === 0) return "0";
+            const common = gcd(n, d);
+            let num = n / common, den = d / common;
+            if (den < 0) { num = -num; den = -den; }
+            if (den === 1) return (num === 1) ? "\\pi" : (num === -1) ? "-\\pi" : `${num}\\pi`;
+            const absNum = Math.abs(num);
+            const sign = num < 0 ? "-" : "";
+            const numStr = absNum === 1 ? "\\pi" : `${absNum}\\pi`;
+            return `${sign}\\dfrac{${numStr}}{${den}}`;
+        }
+
+        function getPrincipalComponents(n, d) {
+            let k = Math.round((n / d) / 2);
+            return [n - 2 * k * d, d];
+        }
+
+        function getPrincipalMeasure(n, d) {
+            return simplifyFraction(...getPrincipalComponents(n, d));
+        }
+
+        function getExactTrig(n, d) {
+            const [pn, pd] = getPrincipalComponents(n, d);
+            const key = `${pn}/${pd}`;
+            const map = {
+                "1/6": ["\\dfrac{\\sqrt{3}}{2}", "\\dfrac{1}{2}"], "-1/6": ["\\dfrac{\\sqrt{3}}{2}", "-\\dfrac{1}{2}"],
+                "1/4": ["\\dfrac{\\sqrt{2}}{2}", "\\dfrac{\\sqrt{2}}{2}"], "-1/4": ["\\dfrac{\\sqrt{2}}{2}", "-\\dfrac{\\sqrt{2}}{2}"],
+                "3/4": ["-\\dfrac{\\sqrt{2}}{2}", "\\dfrac{\\sqrt{2}}{2}"], "-3/4": ["-\\dfrac{\\sqrt{2}}{2}", "-\\dfrac{\\sqrt{2}}{2}"],
+                "1/3": ["\\dfrac{1}{2}", "\\dfrac{\\sqrt{3}}{2}"], "-1/3": ["\\dfrac{1}{2}", "-\\dfrac{\\sqrt{3}}{2}"],
+                "2/3": ["-\\dfrac{1}{2}", "\\dfrac{\\sqrt{3}}{2}"], "-2/3": ["-\\dfrac{1}{2}", "-\\dfrac{\\sqrt{3}}{2}"],
+                "5/6": ["-\\dfrac{\\sqrt{3}}{2}", "\\dfrac{1}{2}"], "-5/6": ["-\\dfrac{\\sqrt{3}}{2}", "-\\dfrac{1}{2}"],
+                "1/1": ["-1", "0"], "0/1": ["1", "0"], "1/2": ["0", "1"], "-1/2": ["0", "-1"]
+            };
+            return map[key] || ["\\cos(" + simplifyFraction(n,d) + ")", "\\sin(" + simplifyFraction(n,d) + ")"];
+        }
+
+        const negate = (s) => (s === "0") ? "0" : s.startsWith("-") ? s.substring(1) : "-" + s;
+
+        const transforms = [
+            { id: 'centrale', nom: "la symétrie centrale de centre O", angleAdd: (n,d) => [n + d, d], cos: (a) => `\\cos(\\pi + ${a}) = -\\cos(${a})`, sin: (a) => `\\sin(\\pi + ${a}) = -\\sin(${a})`, getCoord: (c, s) => `M'\\left( ${negate(c)} ; ${negate(s)} \\right)` },
+            { id: 'axeX', nom: "la symétrie d'axe (Ox)", angleAdd: (n,d) => [-n, d], cos: (a) => `\\cos(-${a}) = \\cos(${a})`, sin: (a) => `\\sin(-${a}) = -\\sin(${a})`, getCoord: (c, s) => `M'\\left( ${c} ; ${negate(s)} \\right)` },
+            { id: 'axeY', nom: "la symétrie d'axe (Oy)", angleAdd: (n,d) => [d - n, d], cos: (a) => `\\cos(\\pi - ${a}) = -\\cos(${a})`, sin: (a) => `\\sin(\\pi - ${a}) = \\sin(${a})`, getCoord: (c, s) => `M'\\left( ${negate(c)} ; ${s} \\right)` },
+            { id: 'rotPos', nom: "la rotation de centre O et d'angle $\\pi/2$", angleAdd: (n,d) => [2*n + d, d*2], cos: (a) => `\\cos(${a} + \\pi/2) = -\\sin(${a})`, sin: (a) => `\\sin(${a} + \\pi/2) = \\cos(${a})`, getCoord: (c, s) => `M'\\left( ${negate(s)} ; ${c} \\right)` },
+            { id: 'rotNeg', nom: "la rotation de centre O et d'angle $-\\pi/2$", angleAdd: (n,d) => [2*n - d, d*2], cos: (a) => `\\cos(${a} - \\pi/2) = \\sin(${a})`, sin: (a) => `\\sin(${a} - \\pi/2) = -\\cos(${a})`, getCoord: (c, s) => `M'\\left( ${s} ; ${negate(c)} \\right)` }
+        ];
+
+        // --- MOTEUR DE GÉNÉRATION ---
+        function generateCard() {
+            document.getElementById('card').classList.remove('is-flipped');
+            updateProgress();
+
+            setTimeout(() => {
+                let scenarioType;
+                do {
+                    let prob = Math.random();
+                    if (prob < 0.15) scenarioType = 'TASK_PRINCIPAL';
+                    else if (prob < 0.45) scenarioType = 'COORD_EXACT';
+                    else scenarioType = ['TRANS_IMAGE', 'TRANS_REL', 'TRANS_IDENT'][Math.floor(Math.random() * 3)];
+                } while (scenarioType === lastScenarioKey);
+                lastScenarioKey = scenarioType;
+
+                if (scenarioType === 'TASK_PRINCIPAL') {
+                    const N = Math.floor(Math.random() * 2001) - 1000, D = Math.floor(Math.random() * 6) + 1;
+                    fillSide('front', {q: "Mesure Principale", val: `Déterminer la mesure principale de l'angle $${simplifyFraction(N, D)}$`, type: 'text'});
+                    fillSide('back', {q: "Solution", val: getPrincipalMeasure(N, D), type: 'latex'});
+                } 
+                else if (scenarioType === 'COORD_EXACT') {
+                    const bases = [
+                        {l: "\\dfrac{\\pi}{6}", n:1, d:6}, {l: "\\dfrac{\\pi}{4}", n:1, d:4}, {l: "\\pi", n:1, d:1},
+                        {l: "\\pi - \\dfrac{\\pi}{6}", n:5, d:6}, {l: "\\pi + \\dfrac{\\pi}{4}", n:5, d:4}
+                        // ... (possibilité d'ajouter les autres bases ici)
+                    ];
+                    const b = bases[Math.floor(Math.random() * bases.length)];
+                    const k = Math.floor(Math.random() * 13) - 6;
+                    const kTex = k === 0 ? "" : ` + 2 \\times ${k} \\times \\pi`;
+                    const [cx, sx] = getExactTrig(b.n, b.d);
+                    fillSide('front', {q: "Coordonnées", val: `Quelles sont les coordonnées de $M$ associé à $${b.l}${kTex}$ ?`, type: 'text'});
+                    fillSide('back', {q: "Réponse Exacte", val: `M\\left( ${cx} ; ${sx} \\right)`, type: 'latex'});
+                }
+                else {
+                    const trans = transforms[Math.floor(Math.random() * transforms.length)];
+                    const safe = [[1,6], [1,4], [1,3], [2,3], [5,6]];
+                    let [n, d] = safe[Math.floor(Math.random() * safe.length)];
+                    if(Math.random() > 0.5) n = -n;
+                    let angleTex = simplifyFraction(n + 2 * (Math.floor(Math.random() * 13) - 6) * d, d);
+
+                    if (scenarioType === 'TRANS_IMAGE') {
+                        fillSide('front', { q: "Transformation", val: `Image de $${angleTex}$ par ${trans.nom} ?`, type: 'text' });
+                        fillSide('back', { q: "Angle Image", val: getPrincipalMeasure(...trans.angleAdd(n, d)), type: 'latex' });
+                    } else if (scenarioType === 'TRANS_REL') {
+                        const rel = ['cosinus', 'sinus', 'coordonnées'][Math.floor(Math.random() * 3)];
+                        let res = (rel === 'cosinus') ? trans.cos(getPrincipalMeasure(n,d)) : (rel === 'sinus') ? trans.sin(getPrincipalMeasure(n,d)) : trans.getCoord(...getExactTrig(n, d));
+                        fillSide('front', { q: "Relation", val: `Compléter la relation de <strong>${rel}</strong> pour ${trans.nom} appliquée à $${angleTex}$ :`, type: 'text' });
+                        fillSide('back', { q: "Formule Complète", val: res, type: 'latex' });
+                    } else {
+                        fillSide('front', { q: "Identification", val: "Quelle transformation géométrique est illustrée ?", type: 'fig', raw: (n/d)*Math.PI, tid: trans.id });
+                        fillSide('back', { q: "Réponse", val: trans.nom, type: 'text' });
+                    }
+                }
+                MathJax.typesetPromise();
+            }, 150);
+        }
+
+        // --- SYSTÈME DE DÉROULEMENT ---
+        function updateProgress() {
+            const p = (currentIndex + 1) / DECK_SIZE * 100;
+            document.getElementById('progressBar').style.width = p + "%";
+            document.getElementById('progressText').textContent = `Carte ${currentIndex + 1} / ${DECK_SIZE}`;
+        }
+
+        function nextCard() {
+            if (currentIndex < DECK_SIZE - 1) {
+                currentIndex++;
+                generateCard();
+            } else {
+                alert("Série terminée ! Bravo.");
+                restartSession();
+            }
+        }
+
+        function restartSession() {
+            currentIndex = 0;
+            generateCard();
+        }
+
+        function fillSide(side, data) {
+            const title = document.getElementById(`${side}-cat`);
+            const content = document.getElementById(`${side}-content`);
+            const cvs = document.getElementById(`${side}-cvs`);
+            title.innerHTML = data.q;
+            content.innerHTML = (data.type === 'latex') ? `\\( ${data.val} \\)` : data.val;
+            cvs.classList.toggle('hidden', data.type !== 'fig');
+            if (data.type === 'fig') draw(`${side}-cvs`, data.raw, data.tid);
+        }
+
+        function draw(id, angleStart, typeId) {
+            const ctx = document.getElementById(id).getContext('2d');
+            const c = 140, r = 90;
+            ctx.clearRect(0,0,280,280);
+            ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(20, c); ctx.lineTo(260, c); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(c, 260); ctx.lineTo(c, 20); ctx.stroke();
+            ctx.strokeStyle = '#2c3e50'; ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI*2); ctx.stroke();
+            
+            let angleEnd = angleStart;
+            let isRot = typeId.startsWith('rot');
+            if(typeId === 'centrale') angleEnd += Math.PI;
+            if(typeId === 'axeX') angleEnd = -angleStart;
+            if(typeId === 'axeY') angleEnd = Math.PI - angleStart;
+            if(typeId === 'rotPos') angleEnd += Math.PI/2;
+            if(typeId === 'rotNeg') angleEnd -= Math.PI/2;
+
+            if(isRot) {
+                ctx.setLineDash([5, 5]); ctx.strokeStyle = '#22c55e';
+                ctx.beginPath(); ctx.arc(c, c, r-10, -angleStart, -angleEnd, typeId==='rotPos'); ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(c+r*Math.cos(angleStart), c-r*Math.sin(angleStart), 5, 0, 7); ctx.fill();
+            ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(c+r*Math.cos(angleEnd), c-r*Math.sin(angleEnd), 5, 0, 7); ctx.fill();
+        }
+
+        function toggleModal(s) { document.getElementById('copyrightModal').classList.toggle('hidden', !s); }
+
+        window.onload = () => restartSession();
+    </script>
+</body>
+</html>
